@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>ADMIN'GUIDE</title>
+
+
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    >
+
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+
+<body>
+
+    <div id="app">
+
+
+        <header class="navbar">
+
+
+
+            <a
+                class="brand"
+                href="#"
+                data-page="home"
+            >
+
+                <span class="brand-icon">
+
+                    <i class="fa-solid fa-building-columns"></i>
+
+                </span>
+
+
+                <span>
+
+                    <strong>
+                        ADMIN'GUIDE
+                    </strong>
+
+                    <small>
+                        Vos démarches, notre priorité
+                    </small>
+
+                </span>
+
+            </a>
+
+
+
+            <nav>
+
+
+                <a
+                    href="#"
+                    data-page="home"
+                >
+
+                    <i class="fa-solid fa-house"></i>
+
+                    <span>
+                        Accueil
+                    </span>
+
+                </a>
+
+
+                <a
+                    href="#"
+                    data-page="services"
+                >
+
+                    <i class="fa-solid fa-table-cells-large"></i>
+
+                    <span>
+                        Services
+                    </span>
+
+                </a>
+
+
+                <a
+                    href="#"
+                    data-page="requests"
+                >
+
+                    <i class="fa-regular fa-file-lines"></i>
+
+                    <span>
+                        Mes demandes
+                    </span>
+
+                </a>
+
+                <a
+                    href="#"
+                    data-page="appointments"
+                >
+
+                    <i class="fa-regular fa-calendar"></i>
+
+                    <span>
+                        Rendez-vous
+                    </span>
+
+                </a>
+
+            </nav>
+
+
+            <div class="nav-actions">
+
+
+                <!-- NOTIFICATIONS -->
+
+                <button
+                    class="icon-btn"
+                    data-page="notifications"
+                    aria-label="Notifications"
+                >
+
+                    <i class="fa-regular fa-bell"></i>
+
+                    <b id="notifBadge">
+                      3
+                    </b>
+
+                </button>
+
+
+                <button
+                    class="profile-btn"
+                    data-page="profile"
+                >
+
+                    <span class="avatar">
+
+                        <i class="fa-solid fa-user"></i>
+
+                    </span>
+
+
+                    <span class="profile-name">
+                        Daniela
+                    </span>
+
+
+                    <i class="fa-solid fa-chevron-down"></i>
+
+                </button>
+
+            </div>
+
+
+            <button
+                class="menu-btn"
+                id="menuBtn"
+                aria-label="Ouvrir le menu"
+            >
+
+                <i class="fa-solid fa-bars"></i>
+
+            </button>
+
+        </header>
+
+
+        <main id="page"></main>
+
+
+        <footer>
+
+
+            <div>
+
+                <strong>
+
+                    <i class="fa-solid fa-building-columns"></i>
+
+                    ADMIN'GUIDE
+
+                </strong>
+
+
+                <br>
+
+
+                <span>
+                    Un accès simple aux services administratifs.
+                </span>
+
+            </div>
+
+
+            <div>
+
+                Services • Assistant IA • Rendez-vous • Suivi
+
+            </div>
+
+
+            <div>
+
+                © 2026 ADMIN'GUIDE
+
+            </div>
+
+
+        </footer>
+
+    </div>
+
+
+    <!-- =========================================
+         MESSAGE TOAST
+    ========================================== -->
+
+    <div
+        class="toast"
+        id="toast"
+    ></div>
+
+
+    <!-- =========================================
+         JAVASCRIPT
+    ========================================== -->
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

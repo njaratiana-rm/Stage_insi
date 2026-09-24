@@ -6,14 +6,16 @@ $pdo->exec("SET NAMES utf8mb4");
 $corrections = [
 
     1 => [
-        "nom" => "Acte de naissance",
-        "description" => "Démarche permettant de demander un acte de naissance.",
-        "service" => "Service état civil",
-        "lieu" => "Commune concernée",
-        "delai" => "À déterminer",
-        "frais" => "À déterminer",
-        "etapes" => "À déterminer"
-    ],
+    "nom" => "Acte de naissance",
+    "description" => "Démarche permettant de déclarer une naissance auprès du service d'état civil compétent et d'obtenir l'acte de naissance correspondant.",
+    "service" => "Service d'état civil de la commune compétente",
+    "lieu" => "Commune ou arrondissement administratif du lieu de naissance",
+    "delai" => "La déclaration de naissance doit être faite dans les 30 jours suivant la naissance",
+    "frais" => "Première copie de l'acte de naissance délivrée gratuitement",
+    "etapes" => "1. Déclarer la naissance auprès du service d'état civil compétent; 2. Fournir les informations et pièces nécessaires à l'enregistrement de la naissance; 3. Faire vérifier les informations par l'officier d'état civil; 4. Faire établir et signer l'acte de naissance; 5. Recevoir la première copie de l'acte de naissance."
+],
+
+    
 
     2 => [
         "nom" => "Acte de décès",
@@ -51,6 +53,12 @@ $sql = "UPDATE demarches
 $stmt = $pdo->prepare($sql);
 
 foreach ($corrections as $id => $data) {
+    echo "<pre>";
+echo "ID en cours : ";
+var_dump($id);
+echo "Nom : ";
+var_dump($data["nom"]);
+echo "</pre>";
 
     $stmt->execute([
         "id" => $id,
@@ -67,21 +75,22 @@ foreach ($corrections as $id => $data) {
 echo "Les démarches 1 à 3 ont été corrigées avec succès.";
 
 $documents = [
-
     1 => [
-        [
-            "nom" => "Pièce d'identité",
-            "description" => "Document permettant d'identifier le demandeur."
-        ],
-        [
-            "nom" => "Certificat de naissance",
-            "description" => "Document fourni pour justifier la naissance."
-        ],
-        [
-            "nom" => "Formulaire de demande",
-            "description" => "Formulaire à remplir pour effectuer la demande."
-        ]
+    [
+        "nom" => "Pièce d'identité",
+        "description" => "Document pouvant être demandé pour vérifier l'identité du déclarant."
     ],
+    [
+        "nom" => "Certificat ou attestation de naissance",
+        "description" => "Document permettant de justifier les informations relatives à la naissance, notamment lorsque la naissance a eu lieu dans une formation sanitaire."
+    ],
+    [
+        "nom" => "Informations relatives aux parents",
+        "description" => "Informations nécessaires à l'établissement de l'acte de naissance concernant les parents de l'enfant."
+    ]
+],
+    
+    
 
     2 => [
         [

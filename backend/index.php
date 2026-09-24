@@ -1,52 +1,173 @@
 <?php
 
+header("Content-Type: application/json; charset=utf-8");
+
 require "db.php";
+
+
+/*
+|--------------------------------------------------------------------------
+| RÉCUPÉRATION D'UNE DÉMARCHE
+|--------------------------------------------------------------------------
+*/
 
 if (isset($_GET["id"])) {
 
-    $id = $_GET["id"];
+    $id = filter_input(
+        INPUT_GET,
+        "id",
+        FILTER_VALIDATE_INT
+    );
 
-    $sql = "SELECT * FROM demarches WHERE id = :id";
+    if ($id === false || $id === null || $id <= 0) {
+
+        http_response_code(400);
+
+        echo json_encode(
+            [
+                "error" => "Identifiant de démarche invalide."
+            ],
+            JSON_UNESCAPED_UNICODE
+        );
+
+        exit;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RÉCUPÉRATION DE LA DÉMARCHE
+    |--------------------------------------------------------------------------
+    */
+
+    $sql = "
+        SELECT *
+        FROM demarches
+        WHERE id = :id
+    ";
 
     $resultat = $pdo->prepare($sql);
-    $resultat->execute(["id" => $id]);
+
+    $resultat->execute([
+        "id" => $id
+    ]);
 
     $demarche = $resultat->fetch(PDO::FETCH_ASSOC);
 
-$sqlDocuments = "SELECT nom_document, description 
-                 FROM documents_requis 
-                 WHERE demarche_id = :id";
 
-$resultatDocuments = $pdo->prepare($sqlDocuments);
-$resultatDocuments->execute(["id" => $id]);
+    if (!$demarche) {
 
-$documents = $resultatDocuments->fetchAll(PDO::FETCH_ASSOC);
+        http_response_code(404);
 
-$demarche["documents"] = $documents;
-$sqlMotsCles = "SELECT mot
-               FROM mots_cles
-               WHERE demarche_id = :id";
+        echo json_encode(
+            [
+                "error" => "Démarche introuvable."
+            ],
+            JSON_UNESCAPED_UNICODE
+        );
 
-$resultatMotsCles = $pdo->prepare($sqlMotsCles);
-$resultatMotsCles->execute(["id" => $id]);
+        exit;
+    }
 
-$motsCles = $resultatMotsCles->fetchAll(PDO::FETCH_COLUMN);
 
-$demarche["mots_cles"] = $motsCles;
+    /*
+    |--------------------------------------------------------------------------
+    | RÉCUPÉRATION DES DOCUMENTS
+    |--------------------------------------------------------------------------
+    */
 
-    header("Content-Type: application/json");
+    $sqlDocuments = "
+        SELECT
+            nom_document,
+            description,
+            obligatoire
+        FROM documents_requis
+        WHERE demarche_id = :id
+    ";
 
-    echo json_encode($demarche);
+    $resultatDocuments =
+        $pdo->prepare($sqlDocuments);
 
-} else {
+    $resultatDocuments->execute([
+        "id" => $id
+    ]);
 
-    $sql = "SELECT * FROM demarches";
+    $documents =
+        $resultatDocuments->fetchAll(
+            PDO::FETCH_ASSOC
+        );
 
-    $resultat = $pdo->query($sql);
+    $demarche["documents"] = $documents;
 
-    $demarches = $resultat->fetchAll(PDO::FETCH_ASSOC);
 
-    header("Content-Type: application/json");
+    /*
+    |--------------------------------------------------------------------------
+    | RÉCUPÉRATION DES MOTS-CLÉS
+    |--------------------------------------------------------------------------
+    */
 
-    echo json_encode($demarches);
+    $sqlMotsCles = "
+        SELECT mot
+        FROM mots_cles
+        WHERE demarche_id = :id
+    ";
+
+    $resultatMotsCles =
+        $pdo->prepare($sqlMotsCles);
+
+    $resultatMotsCles->execute([
+        "id" => $id
+    ]);
+
+    $motsCles =
+        $resultatMotsCles->fetchAll(
+            PDO::FETCH_COLUMN
+        );
+
+    $demarche["mots_cles"] = $motsCles;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RÉPONSE
+    |--------------------------------------------------------------------------
+    */
+
+    echo json_encode(
+        $demarche,
+        JSON_UNESCAPED_UNICODE
+    );
+
+    exit;
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| RÉCUPÉRATION DE TOUTES LES DÉMARCHES
+|--------------------------------------------------------------------------
+*/
+
+$sql = "
+    SELECT *
+    FROM demarches
+";
+
+$resultat = $pdo->query($sql);
+
+$demarches =
+    $resultat->fetchAll(
+        PDO::FETCH_ASSOC
+    );
+
+
+/*
+|--------------------------------------------------------------------------
+| RÉPONSE
+|--------------------------------------------------------------------------
+*/
+
+echo json_encode(
+    $demarches,
+    JSON_UNESCAPED_UNICODE
+);

@@ -21,6 +21,20 @@ function getNotifBadge() {
     return document.getElementById("notifBadge");
 }
 
+function escapeHTML(value) {
+
+    if (value === null || value === undefined) {
+        return "";
+    }
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 
 /* =========================================================
    SERVICES
@@ -250,6 +264,21 @@ const serviceParDemarche = {
 
 
 /* =========================================================
+   NAVIGATION PROCEDURE
+========================================================= */
+
+let procedureOrigin = "services";
+let lastAssistantMessage = "";
+
+function openProcedureFromService(serviceId, procedureId) {
+
+    procedureOrigin = "services";
+
+    procedure(serviceId, procedureId);
+}
+
+
+/* =========================================================
    TOAST
 ========================================================= */
 
@@ -272,11 +301,776 @@ function showToast(message) {
 
 
 /* =========================================================
-   PROTECTION
+   AUTHENTIFICATION - SESSION
 ========================================================= */
 
+let sessionConnectee = false;
+let utilisateurConnecte = null;
+
+
 function protect() {
+
+    if (!sessionConnectee) {
+
+        navigate("login");
+
+        return false;
+    }
+
     return true;
+}
+
+
+async function verifierSession() {
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL + "/verifier_session.php",
+                {
+                    credentials: "same-origin"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Vérification session :",
+            data
+        );
+
+
+        if (
+            data.success &&
+            data.connecte === true
+        ) {
+
+            sessionConnectee = true;
+
+            utilisateurConnecte =
+                data.utilisateur || null;
+
+        } else {
+
+            sessionConnectee = false;
+
+            utilisateurConnecte = null;
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur vérification session :",
+            error
+        );
+
+        sessionConnectee = false;
+
+        utilisateurConnecte = null;
+    }
+
+
+    return sessionConnectee;
+}
+
+
+function updateHeader() {
+
+    const logged =
+        sessionConnectee;
+
+
+    const navbar =
+        document.querySelector(".navbar");
+
+
+    const footer =
+        document.querySelector("footer");
+
+
+    if (navbar) {
+
+        navbar.style.display =
+            logged ? "flex" : "none";
+    }
+
+
+    if (footer) {
+
+        footer.style.display =
+            logged ? "flex" : "none";
+    }
+}
+
+
+async function logout() {
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL + "/deconnexion.php",
+                {
+                    method: "POST",
+                    credentials: "same-origin"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Réponse déconnexion :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Erreur lors de la déconnexion."
+            );
+
+            return;
+        }
+
+
+        sessionConnectee = false;
+
+        utilisateurConnecte = null;
+
+
+        showToast(
+            "Déconnexion réussie ✓"
+        );
+
+
+        setTimeout(function () {
+
+            navigate("login");
+
+        }, 500);
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur déconnexion :",
+            error
+        );
+
+
+        showToast(
+            "Impossible de contacter le serveur."
+        );
+    }
+}
+
+
+/* =========================================================
+   AUTHENTIFICATION
+========================================================= */
+
+function renderLogin() {
+
+    const page = getPage();
+
+    if (!page) {
+        return;
+    }
+
+    page.innerHTML = `
+        <div class="container">
+
+            <div class="card auth-card">
+
+                <div class="eyebrow">
+                    CONNEXION
+                </div>
+
+                <h1>
+                    Se connecter
+                </h1>
+
+                <p class="muted">
+                    Connectez-vous à votre compte ADMIN'GUIDE.
+                </p>
+
+
+                <form onsubmit="login(event)" autocomplete="off">
+
+                    <div class="field">
+
+                        <label for="loginEmail">
+                            Adresse email
+                        </label>
+
+                        <input
+                            id="loginEmail"
+                            type="email"
+                            placeholder="exemple@email.com"
+                            required
+                            autocomplete="off"
+                        >
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label for="loginPassword">
+                            Mot de passe
+                        </label>
+
+                        <input
+                            id="loginPassword"
+                            type="password"
+                            placeholder="Votre mot de passe"
+                            required
+                            autocomplete="new-password"
+                        >
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        class="btn"
+                    >
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        Se connecter
+                    </button>
+
+                </form>
+
+
+                <hr>
+
+
+                <p class="muted">
+                    Vous n'avez pas encore de compte ?
+                </p>
+
+
+                <button
+                    type="button"
+                    class="btn btn-outline"
+                    onclick="navigate('register')"
+                >
+                    <i class="fa-solid fa-user-plus"></i>
+                    Créer un compte
+                </button>
+
+            </div>
+
+        </div>
+    `;
+
+
+    const loginEmail =
+        document.getElementById("loginEmail");
+
+    const loginPassword =
+        document.getElementById("loginPassword");
+
+
+    if (loginEmail) {
+        loginEmail.value = "";
+    }
+
+    if (loginPassword) {
+        loginPassword.value = "";
+    }
+}
+
+
+function renderRegister() {
+
+    const page = getPage();
+
+    if (!page) {
+        return;
+    }
+
+    page.innerHTML = `
+        <div class="container">
+
+            <div class="card auth-card">
+
+                <div class="eyebrow">
+                    CRÉATION DE COMPTE
+                </div>
+
+                <h1>
+                    Créer votre compte
+                </h1>
+
+                <p class="muted">
+                    Inscrivez-vous pour utiliser les services
+                    d'ADMIN'GUIDE.
+                </p>
+
+
+                <form onsubmit="register(event)" autocomplete="off">
+
+                    <div class="field">
+
+                        <label for="regNom">
+                            Nom
+                        </label>
+
+                        <input
+                            id="regNom"
+                            type="text"
+                            placeholder="Votre nom"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label for="regPrenom">
+                            Prénom
+                        </label>
+
+                        <input
+                            id="regPrenom"
+                            type="text"
+                            placeholder="Votre prénom"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label for="regEmail">
+                            Adresse email
+                        </label>
+
+                        <input
+                            id="regEmail"
+                            type="email"
+                            placeholder="exemple@email.com"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label for="regPhone">
+                            Téléphone
+                        </label>
+
+                        <input
+                            id="regPhone"
+                            type="tel"
+                            placeholder="Votre numéro de téléphone"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label for="regPassword">
+                            Mot de passe
+                        </label>
+
+                        <input
+                            id="regPassword"
+                            type="password"
+                            placeholder="Votre mot de passe"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label for="regConfirm">
+                            Confirmer le mot de passe
+                        </label>
+
+                        <input
+                            id="regConfirm"
+                            type="password"
+                            placeholder="Confirmez votre mot de passe"
+                            required
+                        >
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        class="btn"
+                    >
+                        <i class="fa-solid fa-user-plus"></i>
+                        Créer mon compte
+                    </button>
+
+                </form>
+
+
+                <hr>
+
+
+                <p class="muted">
+                    Vous avez déjà un compte ?
+                </p>
+
+
+                <button
+                    type="button"
+                    class="btn btn-outline"
+                    onclick="navigate('login')"
+                >
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Se connecter
+                </button>
+
+            </div>
+
+        </div>
+    `;
+
+
+    const regNom =
+        document.getElementById("regNom");
+
+    const regPrenom =
+        document.getElementById("regPrenom");
+
+    const regEmail =
+        document.getElementById("regEmail");
+
+    const regPhone =
+        document.getElementById("regPhone");
+
+    const regPassword =
+        document.getElementById("regPassword");
+
+    const regConfirm =
+        document.getElementById("regConfirm");
+
+
+    if (regNom) regNom.value = "";
+    if (regPrenom) regPrenom.value = "";
+    if (regEmail) regEmail.value = "";
+    if (regPhone) regPhone.value = "";
+    if (regPassword) regPassword.value = "";
+    if (regConfirm) regConfirm.value = "";
+}
+
+
+/* =========================================================
+   INSCRIPTION
+========================================================= */
+
+async function register(event) {
+
+    event.preventDefault();
+
+
+    const nom =
+        document.getElementById("regNom").value.trim();
+
+    const prenom =
+        document.getElementById("regPrenom").value.trim();
+
+    const email =
+        document.getElementById("regEmail").value.trim().toLowerCase();
+
+    const telephone =
+        document.getElementById("regPhone").value.trim();
+
+    const motDePasse =
+        document.getElementById("regPassword").value;
+
+    const confirmation =
+        document.getElementById("regConfirm").value;
+
+
+    if (motDePasse !== confirmation) {
+
+        showToast(
+            "Les mots de passe ne correspondent pas."
+        );
+
+        return;
+    }
+
+
+    const donnees =
+        new URLSearchParams();
+
+
+    donnees.append("nom", nom);
+    donnees.append("prenom", prenom);
+    donnees.append("email", email);
+    donnees.append("telephone", telephone);
+    donnees.append("mot_de_passe", motDePasse);
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL + "/inscription.php",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/x-www-form-urlencoded"
+                    },
+                    body: donnees
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Réponse inscription :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Erreur lors de l'inscription."
+            );
+
+            return;
+        }
+
+
+        showToast(
+            "Inscription réussie ✓"
+        );
+
+
+        document.querySelector("form").reset();
+
+
+        setTimeout(function () {
+
+            navigate("login");
+
+        }, 700);
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur inscription :",
+            error
+        );
+
+
+        showToast(
+            "Impossible de contacter le serveur."
+        );
+    }
+}
+
+
+/* =========================================================
+   CONNEXION
+========================================================= */
+
+async function login(event) {
+
+    event.preventDefault();
+
+
+    const email =
+        document.getElementById("loginEmail").value.trim().toLowerCase();
+
+    const motDePasse =
+        document.getElementById("loginPassword").value;
+
+
+    const donnees =
+        new URLSearchParams();
+
+
+    donnees.append("email", email);
+    donnees.append("mot_de_passe", motDePasse);
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL + "/connexion.php",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/x-www-form-urlencoded"
+                    },
+                    body: donnees
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Réponse connexion :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Email ou mot de passe incorrect."
+            );
+
+            return;
+        }
+
+
+        sessionConnectee = true;
+
+        utilisateurConnecte =
+            data.utilisateur || null;
+
+
+        showToast(
+            "Connexion réussie ✓"
+        );
+
+
+        setTimeout(function () {
+
+            navigate("home");
+
+        }, 700);
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur connexion :",
+            error
+        );
+
+
+        showToast(
+            "Impossible de contacter le serveur."
+        );
+    }
+}
+
+
+/* =========================================================
+   AJOUTER UNE DEMANDE
+========================================================= */
+
+async function ajouterDemande(demarcheId) {
+
+    if (!sessionConnectee) {
+
+        navigate("login");
+
+        return;
+    }
+
+
+    const donnees =
+        new URLSearchParams();
+
+
+    donnees.append(
+        "demarche_id",
+        demarcheId
+    );
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL + "/ajouter_demande.php",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/x-www-form-urlencoded"
+                    },
+                    credentials: "same-origin",
+                    body: donnees
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Réponse ajout demande :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Impossible d'enregistrer la demande."
+            );
+
+            return;
+        }
+
+
+        showToast(
+            "Demande enregistrée ✓"
+        );
+
+
+        navigate("requests");
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur ajout demande :",
+            error
+        );
+
+
+        showToast(
+            "Impossible de contacter le serveur."
+        );
+    }
 }
 
 
@@ -616,7 +1410,7 @@ function serviceDetail(serviceId) {
 
                                     <button
                                         class="btn"
-                                        onclick="procedure('${serviceId}', ${item.id})"
+                                        onclick="openProcedureFromService('${serviceId}', ${item.id})"
                                     >
                                         <i class="fa-solid fa-arrow-right"></i>
                                         Voir la procédure
@@ -725,17 +1519,49 @@ async function procedure(serviceId, procedureId) {
             await fetch(url);
 
 
+        console.log(
+            "Statut HTTP :",
+            response.status
+        );
+
+
+        const texte =
+            await response.text();
+
+
+        console.log(
+            "Réponse brute index.php :",
+            texte
+        );
+
+
         if (!response.ok) {
 
             throw new Error(
-                "Erreur HTTP : " +
-                response.status
+                "Erreur HTTP " + response.status
             );
         }
 
 
-        const data =
-            await response.json();
+        let data;
+
+
+        try {
+
+            data =
+                JSON.parse(texte);
+
+        } catch (e) {
+
+            console.error(
+                "Réponse non JSON :",
+                texte
+            );
+
+            throw new Error(
+                "Le serveur n'a pas renvoyé du JSON."
+            );
+        }
 
 
         console.log(
@@ -764,10 +1590,24 @@ async function procedure(serviceId, procedureId) {
 
                 <p
                     class="link"
-                    onclick="serviceDetail('${serviceId}')"
+                    onclick="
+                        procedureOrigin === 'assistant'
+                            ? navigate('assistant')
+                            : procedureOrigin === 'home'
+                                ? navigate('home')
+                                : serviceDetail('${serviceId}')
+                    "
                 >
                     <i class="fa-solid fa-arrow-left"></i>
-                    Retour à ${service.name}
+
+                    ${
+                        procedureOrigin === 'assistant'
+                            ? "Retour à l'assistant"
+                            : procedureOrigin === 'home'
+                                ? "Retour à l'accueil"
+                                : "Retour à " + service.name
+                    }
+
                 </p>
 
 
@@ -787,12 +1627,12 @@ async function procedure(serviceId, procedureId) {
 
 
                         <h1>
-                            ${data.nom || selectedProcedure.title}
+                            ${escapeHTML(data.nom || selectedProcedure.title)}
                         </h1>
 
 
                         <p class="muted">
-                            ${data.description || ""}
+                            ${escapeHTML(data.description || "")}
                         </p>
 
 
@@ -813,13 +1653,22 @@ async function procedure(serviceId, procedureId) {
 
                             data.documents.map(function (document) {
 
+                                const obligatoire =
+                                    Number(document.obligatoire) === 1;
+
                                 return `
                                     <div class="check">
 
                                         <i class="fa-solid fa-circle-check"></i>
 
                                         <span>
-                                            ${document.nom_document}
+                                            ${escapeHTML(document.nom_document)}
+
+                                            ${
+                                                obligatoire
+                                                    ? `<small class="muted"> - Obligatoire</small>`
+                                                    : `<small class="muted"> - Selon votre situation</small>`
+                                            }
                                         </span>
 
                                     </div>
@@ -855,7 +1704,7 @@ async function procedure(serviceId, procedureId) {
 
                                 return `
                                     <p>
-                                        ${etape.trim()}
+                                        ${escapeHTML(etape.trim())}
                                     </p>
                                 `;
 
@@ -882,19 +1731,19 @@ async function procedure(serviceId, procedureId) {
 
                         <p>
                             <strong>Lieu :</strong>
-                            ${data.lieu || "À déterminer"}
+                            ${escapeHTML(data.lieu || "À déterminer")}
                         </p>
 
 
                         <p>
                             <strong>Délai :</strong>
-                            ${data.delai || "À déterminer"}
+                            ${escapeHTML(data.delai || "À déterminer")}
                         </p>
 
 
                         <p>
                             <strong>Frais :</strong>
-                            ${data.frais || "À déterminer"}
+                            ${escapeHTML(data.frais || "À déterminer")}
                         </p>
 
 
@@ -958,18 +1807,23 @@ async function procedure(serviceId, procedureId) {
     } catch (error) {
 
         console.error(
-            "Erreur lors du chargement de la procédure :",
+            "ERREUR PROCEDURE :",
             error
         );
 
-        console.error(
-            "Message exact :",
-            error.message
-        );
 
-        showToast(
-            "Impossible de récupérer les informations."
-        );
+        if (error.message === "Démarche introuvable.") {
+
+            showToast(
+                "Cette démarche n'existe pas."
+            );
+
+        } else {
+
+            showToast(
+                "Impossible de récupérer les informations."
+            );
+        }
     }
 }
 
@@ -978,7 +1832,7 @@ async function procedure(serviceId, procedureId) {
    MES DEMANDES
 ========================================================= */
 
-function requestsPage() {
+async function requestsPage() {
 
     if (!protect()) {
         return;
@@ -989,6 +1843,7 @@ function requestsPage() {
     if (!page) {
         return;
     }
+
 
     page.innerHTML = `
         <div class="container">
@@ -1005,43 +1860,507 @@ function requestsPage() {
                 Retrouvez ici vos demandes administratives.
             </p>
 
-
-            <div class="card">
-
-                <div class="notification">
-
-                    <div class="round">
-                        <i class="fa-solid fa-file-lines"></i>
-                    </div>
-
-                    <div>
-
-                        <h3>
-                            Aucune demande récente
-                        </h3>
-
-                        <p class="muted">
-                            Vos demandes apparaîtront ici
-                            lorsque vous aurez effectué
-                            une démarche.
-                        </p>
-
-                        <button
-                            class="btn"
-                            onclick="navigate('services')"
-                        >
-                            <i class="fa-solid fa-table-cells-large"></i>
-                            Consulter les services
-                        </button>
-
-                    </div>
-
-                </div>
-
+            <div id="requestsContainer">
+                <p class="muted">
+                    Chargement des demandes...
+                </p>
             </div>
 
         </div>
     `;
+
+
+    const container =
+        document.getElementById("requestsContainer");
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL + "/mes_demandes.php",
+                {
+                    credentials: "same-origin"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Réponse mes demandes :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            container.innerHTML = `
+                <div class="card">
+
+                    <p class="muted">
+                        ${escapeHTML(
+                            data.message ||
+                            "Impossible de récupérer vos demandes."
+                        )}
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+
+        if (
+            !Array.isArray(data.demandes) ||
+            data.demandes.length === 0
+        ) {
+
+            container.innerHTML = `
+                <div class="card">
+
+                    <div class="notification">
+
+                        <div class="round">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Aucune demande récente
+                            </h3>
+
+                            <p class="muted">
+                                Vos demandes apparaîtront ici
+                                lorsque vous effectuerez une démarche.
+                            </p>
+
+                            <button
+                                class="btn"
+                                onclick="navigate('services')"
+                            >
+                                <i class="fa-solid fa-table-cells-large"></i>
+                                Consulter les services
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            `;
+
+            return;
+        }
+
+
+        container.innerHTML = `
+
+            ${data.demandes.map(function (demande) {
+
+                return `
+                    <div class="card">
+
+                        <div class="notification">
+
+                            <div class="round">
+                                <i class="fa-solid fa-file-lines"></i>
+                            </div>
+
+                            <div>
+
+                                <h3>
+                                    ${escapeHTML(
+                                        demande.demarche_nom
+                                    )}
+                                </h3>
+
+                                <p>
+                                    <strong>Statut :</strong>
+                                    ${escapeHTML(
+                                        demande.statut
+                                    )}
+                                </p>
+
+                                <p class="muted">
+                                    Date :
+                                    ${escapeHTML(
+                                        demande.date_demande
+                                    )}
+                                </p>
+
+                                <button
+                                    class="btn"
+                                    onclick="viewRequest(${Number(demande.id)})"
+                                >
+                                    <i class="fa-solid fa-eye"></i>
+                                    Voir le détail
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                `;
+
+            }).join("")}
+
+        `;
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur récupération demandes :",
+            error
+        );
+
+
+        container.innerHTML = `
+            <div class="card">
+
+                <p class="muted">
+                    Impossible de contacter le serveur.
+                </p>
+
+            </div>
+        `;
+    }
+}
+
+
+/* =========================================================
+   DETAIL D'UNE DEMANDE
+========================================================= */
+
+async function viewRequest(id) {
+
+    if (!protect()) {
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL +
+                "/detail_demande.php?id=" +
+                encodeURIComponent(id),
+                {
+                    credentials: "same-origin"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Réponse détail demande :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Demande introuvable."
+            );
+
+            return;
+        }
+
+
+        const demande =
+            data.demande;
+
+
+        const page =
+            getPage();
+
+
+        if (!page) {
+            return;
+        }
+
+
+        const etapes =
+            demande.etapes
+                ? demande.etapes.split(";")
+                : [];
+
+
+        page.innerHTML = `
+            <div class="container">
+
+                <p
+                    class="link"
+                    onclick="navigate('requests')"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Retour à mes demandes
+                </p>
+
+
+                <div class="card">
+
+                    <div class="eyebrow">
+                        DEMANDE
+                    </div>
+
+
+                    <h1>
+                        ${escapeHTML(
+                            demande.demarche_nom
+                        )}
+                    </h1>
+
+
+                    <p class="muted">
+                        ${escapeHTML(
+                            demande.description || ""
+                        )}
+                    </p>
+
+
+                    <hr>
+
+
+                    <h3>
+                        <i class="fa-solid fa-circle-info"></i>
+                        Informations
+                    </h3>
+
+
+                    <p>
+                        <strong>Statut :</strong>
+                        ${escapeHTML(
+                            demande.statut
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Date :</strong>
+                        ${escapeHTML(
+                            demande.date_demande
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Service :</strong>
+                        ${escapeHTML(
+                            demande.service || "À déterminer"
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Lieu :</strong>
+                        ${escapeHTML(
+                            demande.lieu || "À déterminer"
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Délai :</strong>
+                        ${escapeHTML(
+                            demande.delai || "À déterminer"
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Frais :</strong>
+                        ${escapeHTML(
+                            demande.frais || "À déterminer"
+                        )}
+                    </p>
+
+
+                    <hr>
+
+
+                    <h3>
+                        <i class="fa-solid fa-list-ol"></i>
+                        Étapes
+                    </h3>
+
+
+                    ${
+                        etapes.length > 0
+
+                        ?
+
+                        etapes.map(function (etape) {
+
+                            return `
+                                <p>
+                                    ${escapeHTML(
+                                        etape.trim()
+                                    )}
+                                </p>
+                            `;
+
+                        }).join("")
+
+                        :
+
+                        `
+                            <p class="muted">
+                                Aucune étape enregistrée.
+                            </p>
+                        `
+                    }
+
+
+                    ${
+                        demande.statut !== "Annulée"
+
+                        ?
+
+                        `
+                            <br>
+
+                            <button
+                                class="btn"
+                                onclick="cancelRequest(${Number(demande.id)})"
+                            >
+                                <i class="fa-solid fa-ban"></i>
+                                Annuler la demande
+                            </button>
+                        `
+
+                        :
+
+                        ""
+                    }
+
+                </div>
+
+            </div>
+        `;
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur détail demande :",
+            error
+        );
+
+
+        showToast(
+            "Impossible de récupérer la demande."
+        );
+    }
+}
+
+
+/* =========================================================
+   ANNULER UNE DEMANDE
+========================================================= */
+
+async function cancelRequest(id) {
+
+    if (!protect()) {
+        return;
+    }
+
+
+    const confirmation =
+        confirm(
+            "Voulez-vous vraiment annuler cette demande ?"
+        );
+
+
+    if (!confirmation) {
+        return;
+    }
+
+
+    const donnees =
+        new URLSearchParams();
+
+
+    donnees.append(
+        "demande_id",
+        id
+    );
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL + "/annuler_demande.php",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/x-www-form-urlencoded"
+                    },
+                    credentials: "same-origin",
+                    body: donnees
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Réponse annulation :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Impossible d'annuler la demande."
+            );
+
+            return;
+        }
+
+
+        showToast(
+            "Demande annulée ✓"
+        );
+
+
+        setTimeout(function () {
+
+            navigate("requests");
+
+        }, 500);
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur annulation :",
+            error
+        );
+
+
+        showToast(
+            "Impossible de contacter le serveur."
+        );
+    }
 }
 
 
@@ -1271,6 +2590,16 @@ function profilePage() {
                     Modifier mon profil
                 </button>
 
+                <br>
+
+                <button
+                    class="btn"
+                    onclick="logout()"
+                >
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Se déconnecter
+                </button>
+
             </div>
 
         </div>
@@ -1296,6 +2625,14 @@ function assistantPage() {
 
     page.innerHTML = `
         <div class="container">
+
+            <p
+                class="link"
+                onclick="navigate('home')"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Retour à l'accueil
+            </p>
 
             <div class="eyebrow">
                 ASSISTANT
@@ -1360,6 +2697,19 @@ function assistantPage() {
 
         </div>
     `;
+
+
+    if (lastAssistantMessage) {
+
+        const input =
+            document.getElementById("assistantInput");
+
+        if (input) {
+            input.value = lastAssistantMessage;
+        }
+
+        assistantSearch();
+    }
 }
 
 
@@ -1511,6 +2861,10 @@ async function assistantSearch() {
     const message =
         input.value.trim();
 
+    lastAssistantMessage = message;
+
+    procedureOrigin = "assistant";
+
 
     console.log(
         "Message envoyé :",
@@ -1567,36 +2921,32 @@ async function assistantSearch() {
         );
 
 
-        /* =================================================
-           DEMARCHE TROUVEE
-        ================================================= */
-
         if (data.trouve === true) {
 
             result.innerHTML = `
                 <div class="card">
 
                     <h3>
-                        ${data.demarche.nom}
+                        ${escapeHTML(data.demarche.nom)}
                     </h3>
 
                     <p class="muted">
-                        ${data.demarche.description || ""}
+                        ${escapeHTML(data.demarche.description || "")}
                     </p>
 
                     <p>
                         <strong>Lieu :</strong>
-                        ${data.demarche.lieu || "À déterminer"}
+                        ${escapeHTML(data.demarche.lieu || "À déterminer")}
                     </p>
 
                     <p>
                         <strong>Délai :</strong>
-                        ${data.demarche.delai || "À déterminer"}
+                        ${escapeHTML(data.demarche.delai || "À déterminer")}
                     </p>
 
                     <p>
                         <strong>Frais :</strong>
-                        ${data.demarche.frais || "À déterminer"}
+                        ${escapeHTML(data.demarche.frais || "À déterminer")}
                     </p>
 
 
@@ -1615,9 +2965,18 @@ async function assistantSearch() {
 
                             data.documents.map(function (document) {
 
+                                const obligatoire =
+                                    Number(document.obligatoire) === 1;
+
                                 return `
                                     <li>
-                                        ${document.nom_document}
+                                        ${escapeHTML(document.nom_document)}
+
+                                        ${
+                                            obligatoire
+                                                ? `<small class="muted"> - Obligatoire</small>`
+                                                : `<small class="muted"> - Selon votre situation</small>`
+                                        }
                                     </li>
                                 `;
 
@@ -1634,7 +2993,9 @@ async function assistantSearch() {
 
                     </ul>
 
+
                     <br>
+
 
                     <button
                         type="button"
@@ -1652,10 +3013,6 @@ async function assistantSearch() {
         }
 
 
-        /* =================================================
-           DEMANDE AMBIGUË
-        ================================================= */
-
         if (
             data.ambigu === true ||
             (
@@ -1670,10 +3027,6 @@ async function assistantSearch() {
             return;
         }
 
-
-        /* =================================================
-           AUCUNE DEMARCHE
-        ================================================= */
 
         result.innerHTML = `
             <div class="card">
@@ -1768,7 +3121,7 @@ function assistantChoice(procedureId) {
 
 
     console.log(
-        "Choix assistant :",
+        "Choix :",
         selectedProcedure.title
     );
 
@@ -1785,6 +3138,9 @@ function assistantChoice(procedureId) {
 ========================================================= */
 
 async function searchService() {
+
+    console.trace("🚨 searchService() APPELÉE");
+
 
     if (!protect()) {
         return;
@@ -1805,6 +3161,8 @@ async function searchService() {
 
     const message =
         input.value.trim();
+
+    procedureOrigin = "home";
 
 
     console.log(
@@ -1860,10 +3218,6 @@ async function searchService() {
         );
 
 
-        /* =================================================
-           DEMARCHE NON TROUVEE OU AMBIGUË
-        ================================================= */
-
         if (!data.trouve) {
 
             result.innerHTML =
@@ -1872,10 +3226,6 @@ async function searchService() {
             return;
         }
 
-
-        /* =================================================
-           DEMARCHE TROUVEE
-        ================================================= */
 
         if (
             !data.demarche ||
@@ -1937,6 +3287,9 @@ async function searchService() {
         );
 
 
+        procedureOrigin = "home";
+
+
         await procedure(
             serviceId,
             selectedProcedure.id
@@ -1969,7 +3322,54 @@ async function searchService() {
 
 function renderPage(route) {
 
+    updateHeader();
+
+
+    if (
+        !sessionConnectee &&
+        route !== "login" &&
+        route !== "register"
+    ) {
+
+        route = "login";
+
+
+        history.replaceState(
+            {},
+            "",
+            "#login"
+        );
+    }
+
+
+    if (
+        sessionConnectee &&
+        (
+            route === "login" ||
+            route === "register"
+        )
+    ) {
+
+        route = "home";
+
+
+        history.replaceState(
+            {},
+            "",
+            "#home"
+        );
+    }
+
+
     switch (route) {
+
+        case "login":
+            renderLogin();
+            break;
+
+        case "register":
+            renderRegister();
+            break;
 
         case "home":
             homePage();
@@ -2006,6 +3406,8 @@ function renderPage(route) {
 
 
     updateActiveNav(route);
+
+    updateHeader();
 }
 
 
@@ -2169,7 +3571,10 @@ window.addEventListener(
 
 document.addEventListener(
     "DOMContentLoaded",
-    function () {
+    async function () {
+
+        await verifierSession();
+
 
         const route =
             window.location.hash

@@ -1051,20 +1051,12 @@ $documents = [
 
     13 => [
         [
-            "nom" => "Pièce d'identité",
-            "description" => "Document permettant d'identifier le demandeur."
+            "nom" => "Carte nationale d'identité (CIN)",
+            "description" => "Pièce d'identité permettant de vérifier l'identité du demandeur ou d'un membre du ménage."
         ],
         [
-            "nom" => "Justificatif de situation",
-            "description" => "Document permettant de justifier la situation du demandeur."
-        ],
-        [
-            "nom" => "Formulaire de demande",
-            "description" => "Formulaire nécessaire pour effectuer la demande d'aide sociale."
-        ],
-        [
-            "nom" => "Justificatifs de ressources",
-            "description" => "Documents permettant de justifier les ressources du demandeur selon sa situation."
+            "nom" => "Carnet du Fokontany",
+            "description" => "Document permettant notamment de vérifier le ménage et le lieu de résidence."
         ]
     ]
 
@@ -1111,12 +1103,12 @@ echo "Documents de la démarche 13 corrigés avec succès.";
 
 $demarche13 = [
     "nom" => "Aide sociale",
-    "description" => "Démarche permettant de demander une aide sociale selon la situation du demandeur.",
-    "service" => "Service social compétent",
-    "lieu" => "Centre ou service social compétent",
-    "delai" => "À déterminer",
-    "frais" => "Gratuit",
-    "etapes" => "1. Préparer les documents nécessaires; 2. Se rendre auprès du service social compétent; 3. Présenter sa situation et fournir les informations demandées; 4. Déposer la demande d'aide sociale; 5. Attendre l'étude de la demande; 6. Recevoir la décision ou les informations relatives à la demande."
+    "description" => "Demande d'orientation vers les dispositifs de protection sociale destinés aux ménages ou personnes en situation de vulnérabilité.",
+    "service" => "Ministère de la Population et des Solidarités / service ou dispositif de protection sociale compétent",
+    "lieu" => "Fokontany, commune ou structure compétente selon le dispositif et la zone concernée",
+    "delai" => "Variable selon le dispositif et l'étude de l'éligibilité",
+    "frais" => "Aucun frais pour les dispositifs dont la gratuité est officiellement prévue",
+    "etapes" => "1. Se renseigner auprès du Fokontany, de la commune ou du service compétent; 2. Vérifier si le demandeur ou le ménage peut être enregistré ou pris en compte dans le dispositif concerné; 3. Fournir les informations nécessaires sur le ménage et sa situation; 4. Effectuer, lorsque le dispositif le prévoit, l'enregistrement dans le Registre Social Unique (RSU); 5. Laisser les organismes compétents procéder à l'étude et au ciblage; 6. Recevoir la décision ou les informations concernant l'aide disponible."
 ];
 
 $stmt = $pdo->prepare(
@@ -1140,26 +1132,20 @@ $documents = [
     14 => [
         [
             "nom" => "Pièce d'identité",
-            "description" => "Document permettant d'identifier le demandeur."
+            "description" => "Document d'identité pouvant être demandé pour vérifier l'identité du demandeur ou des membres du ménage."
         ],
         [
-            "nom" => "Justificatif de situation",
-            "description" => "Document permettant de justifier la situation du demandeur."
-        ],
-        [
-            "nom" => "Formulaire de demande",
-            "description" => "Formulaire nécessaire pour effectuer la demande de prestation sociale."
-        ],
-        [
-            "nom" => "Justificatifs de ressources",
-            "description" => "Documents permettant de justifier les ressources du demandeur selon la prestation demandée."
+            "nom" => "Documents relatifs au ménage",
+            "description" => "Documents permettant d'identifier ou de vérifier la composition et la situation du ménage, selon le programme concerné."
         ]
     ]
 
 ];
 
+
 foreach ($documents as $demarcheId => $liste) {
 
+    // Récupérer les documents existants
     $resultat = $pdo->prepare(
         "SELECT id
          FROM documents_requis
@@ -1173,6 +1159,32 @@ foreach ($documents as $demarcheId => $liste) {
 
     $ids = $resultat->fetchAll(PDO::FETCH_COLUMN);
 
+
+    // Supprimer les anciens documents en trop
+    if (count($ids) > count($liste)) {
+
+        $idsASupprimer = array_slice(
+            $ids,
+            count($liste)
+        );
+
+        $delete = $pdo->prepare(
+            "DELETE FROM documents_requis
+             WHERE id = :id
+               AND demarche_id = :demarche_id"
+        );
+
+        foreach ($idsASupprimer as $id) {
+
+            $delete->execute([
+                "id" => $id,
+                "demarche_id" => $demarcheId
+            ]);
+        }
+    }
+
+
+    // Mettre à jour les documents conservés
     $stmt = $pdo->prepare(
         "UPDATE documents_requis
          SET nom_document = :nom,
@@ -1180,6 +1192,7 @@ foreach ($documents as $demarcheId => $liste) {
          WHERE id = :id
            AND demarche_id = :demarche_id"
     );
+
 
     foreach ($liste as $index => $document) {
 
@@ -1195,16 +1208,33 @@ foreach ($documents as $demarcheId => $liste) {
     }
 }
 
+
 echo "Documents de la démarche 14 corrigés avec succès.";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 $demarche14 = [
     "nom" => "Prestations sociales",
-    "description" => "Démarche permettant de demander ou de bénéficier d'une prestation sociale selon la situation du demandeur.",
-    "service" => "Service social compétent",
-    "lieu" => "Centre ou service social compétent",
-    "delai" => "À déterminer",
-    "frais" => "Gratuit",
-    "etapes" => "1. Préparer les documents nécessaires; 2. Se rendre auprès du service social compétent; 3. Présenter sa situation et fournir les informations demandées; 4. Déposer la demande de prestation sociale; 5. Attendre l'étude de la demande; 6. Recevoir la décision ou les informations relatives à la prestation."
+    "description" => "Orientation vers les programmes de protection sociale destinés notamment aux ménages pauvres ou vulnérables, selon les critères et les zones d'intervention du programme concerné.",
+    "service" => "Ministère de la Population et des Solidarités (MPS) / organisme chargé du programme concerné",
+    "lieu" => "Fokontany, commune ou structure locale chargée du programme concerné",
+    "delai" => "Variable selon le programme, la zone d'intervention et le processus de ciblage",
+    "frais" => "Aucun frais pour les programmes dont la gratuité est officiellement prévue",
+    "etapes" => "1. Se renseigner auprès du Fokontany, de la commune ou de la structure chargée du programme; 2. Identifier le programme correspondant à la situation du ménage; 3. Vérifier les conditions d'éligibilité; 4. Participer, lorsque le programme le prévoit, au processus d'inscription et de ciblage; 5. Fournir les informations demandées sur le ménage; 6. Attendre la validation de l'éligibilité et la sélection des bénéficiaires; 7. Recevoir les informations relatives à la prestation ou à l'accompagnement."
 ];
 
 $stmt = $pdo->prepare(
@@ -1225,24 +1255,16 @@ echo "Démarche 14 corrigée avec succès.";
 
 $documents = [
 
-    15 => [
-        [
-            "nom" => "Pièce d'identité",
-            "description" => "Document permettant d'identifier le demandeur."
-        ],
-        [
-            "nom" => "Justificatif de situation",
-            "description" => "Document permettant de justifier la situation du demandeur."
-        ],
-        [
-            "nom" => "Formulaire de demande",
-            "description" => "Formulaire nécessaire pour effectuer la demande de protection sociale."
-        ],
-        [
-            "nom" => "Justificatifs de ressources",
-            "description" => "Documents permettant de justifier les ressources du demandeur selon sa situation."
-        ]
+15 => [
+    [
+        "nom" => "Pièce d'identité",
+        "description" => "Document pouvant être demandé pour vérifier l'identité du demandeur ou des membres du ménage."
+    ],
+    [
+        "nom" => "Documents relatifs au ménage",
+        "description" => "Documents permettant de vérifier la composition et la situation du ménage, selon le dispositif concerné."
     ]
+]
 
 ];
 
@@ -1287,14 +1309,15 @@ echo "Documents de la démarche 15 corrigés avec succès.";
 
 $demarche15 = [
     "nom" => "Protection sociale",
-    "description" => "Démarche permettant de demander ou de bénéficier d'une protection sociale selon la situation du demandeur.",
-    "service" => "Service social compétent",
-    "lieu" => "Centre ou service social compétent",
-    "delai" => "À déterminer",
-    "frais" => "Gratuit",
-    "etapes" => "1. Préparer les documents nécessaires; 2. Se rendre auprès du service social compétent; 3. Présenter sa situation et fournir les informations demandées; 4. Déposer la demande de protection sociale; 5. Attendre l'étude de la demande; 6. Recevoir la décision ou les informations relatives à la protection sociale."
+    "description" => "Orientation vers les dispositifs de protection sociale destinés notamment aux ménages en situation de pauvreté ou de vulnérabilité, selon le programme et la zone concernés.",
+    "service" => "Ministère de la Population et des Solidarités (MPS) / organisme chargé du dispositif concerné",
+    "lieu" => "Fokontany, commune ou structure locale compétente selon le dispositif concerné",
+    "delai" => "Variable selon le programme, la zone d'intervention et le processus de ciblage",
+    "frais" => "Aucun frais pour les dispositifs dont la gratuité est officiellement prévue",
+    "etapes" => "1. Se renseigner auprès du Fokontany, de la commune ou de la structure compétente; 2. Identifier le dispositif de protection sociale correspondant à la situation du ménage; 3. Vérifier les conditions d'éligibilité du programme; 4. Participer, lorsque le dispositif le prévoit, au processus d'enregistrement et de ciblage; 5. Fournir les informations demandées sur le ménage; 6. Attendre l'étude de l'éligibilité et la sélection selon les règles du programme; 7. Recevoir les informations relatives à l'aide, au transfert ou à l'accompagnement disponible."
 ];
 
+ 
 $stmt = $pdo->prepare(
     "UPDATE demarches
      SET nom = :nom,
@@ -2889,4 +2912,15 @@ foreach ($mots_cles as $mot) {
 }
 
 echo "Mots-clés de la démarche 12 corrigés avec succès.";
+
+
+$demarche14 = [
+    "nom" => "Prestations sociales",
+    "description" => "Orientation vers les programmes de protection sociale destinés notamment aux ménages pauvres ou vulnérables, selon les critères et les zones d'intervention du programme concerné.",
+    "service" => "Ministère de la Population et des Solidarités (MPS) / organisme chargé du programme concerné",
+    "lieu" => "Fokontany, commune ou structure locale chargée du programme concerné",
+    "delai" => "Variable selon le programme, la zone d'intervention et le processus de ciblage",
+    "frais" => "Aucun frais pour les programmes dont la gratuité est prévue",
+    "etapes" => "1. Se renseigner auprès du Fokontany, de la commune ou de la structure chargée du programme; 2. Identifier le programme correspondant à la situation du ménage; 3. Vérifier les conditions d'éligibilité; 4. Participer, lorsque le programme le prévoit, au processus d'inscription et de ciblage; 5. Fournir les informations demandées sur le ménage; 6. Attendre la validation de l'éligibilité et la sélection des bénéficiaires; 7. Recevoir les informations relatives à la prestation ou à l'accompagnement."
+];
 

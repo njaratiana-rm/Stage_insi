@@ -35,7 +35,17 @@ $corrections = [
         "delai" => "À déterminer",
         "frais" => "À déterminer",
         "etapes" => "1. Préparer les documents nécessaires; 2. Se rendre au service état civil compétent; 3. Fournir les informations et documents demandés; 4. Faire établir ou rechercher l'acte de mariage; 5. Recevoir une copie de l'acte de mariage"
-    ]
+    ],
+
+    16 => [
+    "nom" => "Permis de conduire",
+    "description" => "Démarche permettant de se présenter aux formalités et à l'examen nécessaires pour obtenir un permis de conduire à Madagascar.",
+    "service" => "Centre immatriculateur compétent",
+    "lieu" => "Centre immatriculateur correspondant à la résidence du demandeur",
+    "delai" => "Variable selon la catégorie du permis, les formalités et la disponibilité des sessions d'examen",
+    "frais" => "Montant variable selon les formalités et la catégorie du permis",
+    "etapes" => "1. Choisir la catégorie de permis correspondant au véhicule à conduire; 2. Suivre la formation à la conduite auprès d'un établissement agréé lorsque celle-ci est requise; 3. Préparer les pièces nécessaires au dossier; 4. Déposer le dossier auprès du service compétent; 5. Se présenter aux examens requis; 6. Après réussite et validation du dossier, obtenir le permis de conduire."
+],
 
 ];
 
@@ -70,6 +80,27 @@ echo "</pre>";
         "frais" => $data["frais"],
         "etapes" => $data["etapes"]
     ]);
+
+    if ($id == 16) {
+    echo "<pre>";
+    echo "APRÈS UPDATE SQL :\n";
+
+    $verification = $pdo->query(
+        "SELECT nom, description, service, lieu, delai, frais, etapes
+         FROM demarches
+         WHERE id = 16"
+    );
+
+    print_r($verification->fetch(PDO::FETCH_ASSOC));
+    echo "</pre>";
+}
+
+    if ($id == 16) {
+    echo "<pre>";
+    echo "MISE À JOUR 16 EFFECTUÉE\n";
+    print_r($data);
+    echo "</pre>";
+}
 }
 
 echo "Les démarches 1 à 3 ont été corrigées avec succès.";
@@ -1407,12 +1438,12 @@ echo "Documents de la démarche 16 corrigés avec succès.";
 
 $demarche16 = [
     "nom" => "Permis de conduire",
-    "description" => "Démarche permettant de demander un permis de conduire.",
-    "service" => "Service compétent pour les permis de conduire",
-    "lieu" => "Centre ou service compétent",
-    "delai" => "À déterminer",
-    "frais" => "À déterminer",
-    "etapes" => "1. Préparer les documents nécessaires; 2. Remplir le formulaire de demande de permis de conduire; 3. Effectuer les formalités nécessaires; 4. Passer les examens requis; 5. Déposer ou compléter le dossier auprès du service compétent; 6. Recevoir le permis de conduire."
+    "description" => "Démarche permettant de se présenter aux formalités et à l'examen nécessaires pour obtenir un permis de conduire à Madagascar.",
+    "service" => "Centre immatriculateur compétent",
+    "lieu" => "Centre immatriculateur correspondant à la résidence du demandeur",
+    "delai" => "Variable selon la catégorie du permis, les formalités et la disponibilité des sessions d'examen",
+    "frais" => "Montant variable selon les formalités et la catégorie du permis",
+    "etapes" => "1. Choisir la catégorie de permis correspondant au véhicule à conduire; 2. Suivre la formation à la conduite auprès d'un établissement agréé lorsque celle-ci est requise; 3. Préparer les pièces nécessaires au dossier; 4. Déposer le dossier auprès du service compétent; 5. Se présenter aux examens requis; 6. Après réussite et validation du dossier, obtenir le permis de conduire."
 ];
 
 $stmt = $pdo->prepare(

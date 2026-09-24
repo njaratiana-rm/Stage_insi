@@ -63,12 +63,6 @@ $sql = "UPDATE demarches
 $stmt = $pdo->prepare($sql);
 
 foreach ($corrections as $id => $data) {
-    echo "<pre>";
-echo "ID en cours : ";
-var_dump($id);
-echo "Nom : ";
-var_dump($data["nom"]);
-echo "</pre>";
 
     $stmt->execute([
         "id" => $id,
@@ -81,26 +75,6 @@ echo "</pre>";
         "etapes" => $data["etapes"]
     ]);
 
-    if ($id == 16) {
-    echo "<pre>";
-    echo "APRÈS UPDATE SQL :\n";
-
-    $verification = $pdo->query(
-        "SELECT nom, description, service, lieu, delai, frais, etapes
-         FROM demarches
-         WHERE id = 16"
-    );
-
-    print_r($verification->fetch(PDO::FETCH_ASSOC));
-    echo "</pre>";
-}
-
-    if ($id == 16) {
-    echo "<pre>";
-    echo "MISE À JOUR 16 EFFECTUÉE\n";
-    print_r($data);
-    echo "</pre>";
-}
 }
 
 echo "Les démarches 1 à 3 ont été corrigées avec succès.";
@@ -1525,14 +1499,15 @@ foreach ($documents as $demarcheId => $liste) {
 echo "Documents de la démarche 17 corrigés avec succès.";
 
 $demarche17 = [
-    "nom" => "Immatriculation véhicule",
-    "description" => "Démarche permettant d'effectuer les formalités nécessaires à l'immatriculation d'un véhicule.",
-    "service" => "Service compétent pour l'immatriculation des véhicules",
-    "lieu" => "Centre ou service compétent",
-    "delai" => "À déterminer",
-    "frais" => "À déterminer",
-    "etapes" => "1. Préparer les documents nécessaires; 2. Remplir le formulaire d'immatriculation; 3. Fournir les informations relatives au véhicule et à son propriétaire; 4. Déposer le dossier auprès du service compétent; 5. Effectuer les formalités nécessaires; 6. Recevoir les documents relatifs à l'immatriculation du véhicule."
+    "nom" => "Immatriculation d'un véhicule",
+    "description" => "Démarche permettant d'effectuer les formalités nécessaires à la mise en circulation et à l'immatriculation d'un véhicule.",
+    "service" => "Centre immatriculateur compétent",
+    "lieu" => "Centre immatriculateur du domicile du propriétaire",
+    "delai" => "Variable selon la situation du véhicule et la complétude du dossier",
+    "frais" => "Montant variable selon le véhicule et les formalités d'immatriculation",
+    "etapes" => "1. Préparer les pièces nécessaires à l'immatriculation; 2. Effectuer, lorsque cela est requis, les formalités préalables concernant le véhicule; 3. Déposer la déclaration et le dossier auprès du Centre immatriculateur compétent; 4. Fournir les informations relatives au véhicule et à son propriétaire; 5. Effectuer les formalités et paiements requis; 6. Recevoir le certificat d'immatriculation (carte grise)."
 ];
+
 
 $stmt = $pdo->prepare(
     "UPDATE demarches
@@ -1614,13 +1589,14 @@ echo "Documents de la démarche 18 corrigés avec succès.";
 
 $demarche18 = [
     "nom" => "Carte grise",
-    "description" => "Démarche permettant d'effectuer les formalités nécessaires à l'obtention d'une carte grise pour un véhicule.",
-    "service" => "Service compétent pour l'immatriculation des véhicules",
-    "lieu" => "Centre ou service compétent",
-    "delai" => "À déterminer",
-    "frais" => "À déterminer",
-    "etapes" => "1. Préparer les documents nécessaires; 2. Remplir le formulaire de demande de carte grise; 3. Fournir les informations relatives au véhicule et à son propriétaire; 4. Déposer le dossier auprès du service compétent; 5. Effectuer les formalités nécessaires; 6. Recevoir la carte grise."
+    "description" => "Démarche permettant d'obtenir ou de mettre à jour le certificat d'immatriculation (carte grise) d'un véhicule.",
+    "service" => "Centre immatriculateur compétent",
+    "lieu" => "Centre immatriculateur du domicile du propriétaire",
+    "delai" => "Variable selon la situation du véhicule et la nature de la demande",
+    "frais" => "Montant variable selon la nature de la demande et les formalités concernées",
+    "etapes" => "1. Identifier la nature de la demande concernant la carte grise; 2. Préparer les pièces nécessaires selon la situation du véhicule; 3. Déposer la demande auprès du Centre immatriculateur compétent; 4. Fournir les informations relatives au véhicule et à son propriétaire; 5. Effectuer les formalités et paiements requis; 6. Recevoir ou faire mettre à jour le certificat d'immatriculation (carte grise)."
 ];
+
 
 $stmt = $pdo->prepare(
     "UPDATE demarches

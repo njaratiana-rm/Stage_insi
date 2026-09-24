@@ -375,6 +375,8 @@ async function verifierSession() {
     }
 
 
+    updateHeader();
+
     return sessionConnectee;
 }
 
@@ -404,6 +406,30 @@ function updateHeader() {
 
         footer.style.display =
             logged ? "flex" : "none";
+    }
+        updateAdminNav();
+}
+
+function updateAdminNav() {
+
+    const link =
+        document.getElementById("adminRequestsLink");
+
+    if (!link) {
+        return;
+    }
+
+    if (
+        sessionConnectee &&
+        utilisateurConnecte &&
+        utilisateurConnecte.role === "admin"
+    ) {
+
+        link.style.display = "";
+
+    } else {
+
+        link.style.display = "none";
     }
 }
 
@@ -472,6 +498,32 @@ async function logout() {
             "Impossible de contacter le serveur."
         );
     }
+}
+
+function protectAdmin() {
+
+    if (!sessionConnectee) {
+
+        navigate("login");
+
+        return false;
+    }
+
+    if (
+        !utilisateurConnecte ||
+        utilisateurConnecte.role !== "admin"
+    ) {
+
+        showToast(
+            "Accès administrateur refusé."
+        );
+
+        navigate("home");
+
+        return false;
+    }
+
+    return true;
 }
 
 
@@ -955,12 +1007,7 @@ async function login(event) {
             return;
         }
 
-
-        sessionConnectee = true;
-
-        utilisateurConnecte =
-            data.utilisateur || null;
-
+        await verifierSession();
 
         showToast(
             "Connexion réussie ✓"
@@ -1748,15 +1795,14 @@ async function procedure(serviceId, procedureId) {
 
 
                         <br>
-
-
                         <button
-                            class="btn"
-                            onclick="navigate('appointments')"
-                        >
-                            <i class="fa-regular fa-calendar"></i>
-                            Prendre rendez-vous
-                        </button>
+    class="btn"
+    onclick="ajouterDemande(${Number(selectedProcedure.id)})"
+>
+    <i class="fa-solid fa-file-circle-plus"></i>
+    Faire une demande
+</button>
+                        
 
                     </div>
 
@@ -2033,6 +2079,174 @@ async function requestsPage() {
     }
 }
 
+async function adminRequestsPage() {
+
+    if (!protectAdmin()) {
+        return;
+    }
+
+    const page = getPage();
+
+    if (!page) {
+        return;
+    }
+
+    page.innerHTML = `
+        <div class="container">
+
+            <div class="eyebrow">
+                ADMINISTRATION
+            </div>
+
+            <h1>
+                Administration des demandes
+            </h1>
+
+            <p class="muted">
+                Consultez les demandes envoyées par les utilisateurs.
+            </p>
+
+            <div id="adminRequestsResult">
+
+                <p class="muted">
+                    Chargement des demandes...
+                </p>
+
+            </div>
+
+        </div>
+    `;
+
+    const result =
+        document.getElementById("adminRequestsResult");
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL + "/admin_demandes.php",
+                {
+                    credentials: "same-origin"
+                }
+            );
+
+        const data =
+            await response.json();
+
+        console.log(
+            "Demandes administrateur :",
+            data
+        );
+
+        if (!data.success) {
+
+            result.innerHTML = `
+                <div class="card">
+
+                    <p class="muted">
+                        ${escapeHTML(
+                            data.message ||
+                            "Accès refusé."
+                        )}
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+        if (
+            !Array.isArray(data.demandes) ||
+            data.demandes.length === 0
+        ) {
+
+            result.innerHTML = `
+                <div class="card">
+
+                    <p class="muted">
+                        Aucune demande reçue.
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+        result.innerHTML =
+            data.demandes.map(function (demande) {
+
+                return `
+                    <div class="card">
+
+                        <h3>
+                            ${escapeHTML(
+                                demande.demarche_nom
+                            )}
+                        </h3>
+
+                        <p>
+                            <strong>Utilisateur :</strong>
+                            ${escapeHTML(
+                                demande.prenom
+                            )}
+                            ${escapeHTML(
+                                demande.nom
+                            )}
+                        </p>
+
+                        <p>
+                            <strong>Email :</strong>
+                            ${escapeHTML(
+                                demande.email
+                            )}
+                        </p>
+
+                        <p>
+                            <strong>Téléphone :</strong>
+                            ${escapeHTML(
+                                demande.telephone
+                            )}
+                        </p>
+
+                        <p>
+                            <strong>Statut :</strong>
+                            ${escapeHTML(
+                                demande.statut
+                            )}
+                        </p>
+
+                        <p class="muted">
+                            <strong>Date :</strong>
+                            ${escapeHTML(
+                                demande.date_demande
+                            )}
+                        </p>
+
+                    </div>
+                `;
+
+            }).join("");
+
+    } catch (error) {
+
+        console.error(
+            "Erreur demandes admin :",
+            error
+        );
+
+        result.innerHTML = `
+            <div class="card">
+
+                <p class="muted">
+                    Impossible de charger les demandes.
+                </p>
+
+            </div>
+        `;
+    }
+}
 
 /* =========================================================
    DETAIL D'UNE DEMANDE
@@ -3321,10 +3535,6 @@ async function searchService() {
 ========================================================= */
 
 function renderPage(route) {
-
-    updateHeader();
-
-
     if (
         !sessionConnectee &&
         route !== "login" &&
@@ -3381,6 +3591,10 @@ function renderPage(route) {
 
         case "requests":
             requestsPage();
+            break;
+
+        case "admin-requests":
+            adminRequestsPage();
             break;
 
         case "appointments":
@@ -3574,6 +3788,15 @@ document.addEventListener(
     async function () {
 
         await verifierSession();
+        console.log(
+    "UTILISATEUR APRÈS VÉRIFICATION :",
+    utilisateurConnecte
+);
+
+console.log(
+    "ROLE APRÈS VÉRIFICATION :",
+    utilisateurConnecte?.role
+);
 
 
         const route =

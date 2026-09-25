@@ -27,10 +27,10 @@ if ($email === "" || $mot_de_passe === "") {
 
 try {
 
-    $sql = "SELECT id, nom, prenom, email, mot_de_passe
-            FROM utilisateurs
-            WHERE email = :email
-            LIMIT 1";
+    $sql = "SELECT id, nom, prenom, email, mot_de_passe, role
+        FROM utilisateurs
+        WHERE email = :email
+        LIMIT 1";
 
     $stmt = $pdo->prepare($sql);
 
@@ -62,6 +62,7 @@ $_SESSION["user_id"] = $utilisateur["id"];
 $_SESSION["nom"] = $utilisateur["nom"];
 $_SESSION["prenom"] = $utilisateur["prenom"];
 $_SESSION["email"] = $utilisateur["email"];
+$_SESSION["role"] = $utilisateur["role"];
 
     unset($utilisateur["mot_de_passe"]);
 

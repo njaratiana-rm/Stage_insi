@@ -2024,13 +2024,14 @@ async function requestsPage() {
                                         demande.demarche_nom
                                     )}
                                 </h3>
+                                <div>
 
-                                <p>
-                                    <strong>Statut :</strong>
-                                    ${escapeHTML(
-                                        demande.statut
-                                    )}
-                                </p>
+    <strong>Statut :</strong>
+
+    ${escapeHTML(demande.statut)}
+    
+
+</div>
 
                                 <p class="muted">
                                     Date :
@@ -2210,12 +2211,53 @@ async function adminRequestsPage() {
                             )}
                         </p>
 
-                        <p>
-                            <strong>Statut :</strong>
-                            ${escapeHTML(
-                                demande.statut
-                            )}
-                        </p>
+                        
+                    <div>
+
+    <strong>Statut :</strong>
+
+    <select
+        onchange="modifierStatutDemande(
+            ${Number(demande.id)},
+            this.value
+        )"
+    >
+
+        <option
+            value="En attente"
+            ${demande.statut === "En attente" ? "selected" : ""}
+        >
+            En attente
+        </option>
+
+        <option
+            value="Acceptée"
+            ${demande.statut === "Acceptée" ? "selected" : ""}
+        >
+            Acceptée
+        </option>
+
+        <option
+            value="Refusée"
+            ${demande.statut === "Refusée" ? "selected" : ""}
+        >
+            Refusée
+        </option>
+
+        <option
+            value="Traitée"
+            ${demande.statut === "Traitée" ? "selected" : ""}
+        >
+            Traitée
+        </option>
+
+    </select>
+
+</div>
+                        
+                        
+                        
+                        
 
                         <p class="muted">
                             <strong>Date :</strong>
@@ -2245,6 +2287,65 @@ async function adminRequestsPage() {
 
             </div>
         `;
+    }
+}
+
+async function modifierStatutDemande(id, statut) {
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/modifier_statut_demande.php",
+            {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type":
+                        "application/x-www-form-urlencoded"
+                },
+                body:
+                    "demande_id=" +
+                    encodeURIComponent(id) +
+                    "&statut=" +
+                    encodeURIComponent(statut)
+            }
+        );
+
+        const data =
+            await response.json();
+
+        console.log(
+            "Modification statut :",
+            data
+        );
+
+if (!data.success) {
+
+    showToast(
+        data.message ||
+        "Impossible de modifier le statut."
+    );
+
+    return;
+}
+
+showToast(
+    "Statut modifié avec succès."
+);
+
+await adminRequestsPage();
+ 
+
+    } catch (error) {
+
+        console.error(
+            "Erreur modification statut :",
+            error
+        );
+
+        showToast(
+            "Erreur lors de la modification."
+        );
     }
 }
 

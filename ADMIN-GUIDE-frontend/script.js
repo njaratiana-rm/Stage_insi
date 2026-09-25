@@ -409,13 +409,22 @@ function updateHeader() {
     }
         updateAdminNav();
 }
-
 function updateAdminNav() {
+
+    const dashboardLink =
+        document.getElementById("adminDashboardLink");
 
     const link =
         document.getElementById("adminRequestsLink");
 
-    if (!link) {
+    const appointmentsLink =
+        document.getElementById("adminAppointmentsLink");
+
+    if (
+        !dashboardLink ||
+        !link ||
+        !appointmentsLink
+    ) {
         return;
     }
 
@@ -425,14 +434,17 @@ function updateAdminNav() {
         utilisateurConnecte.role === "admin"
     ) {
 
+        dashboardLink.style.display = "";
         link.style.display = "";
+        appointmentsLink.style.display = "";
 
     } else {
 
+        dashboardLink.style.display = "none";
         link.style.display = "none";
+        appointmentsLink.style.display = "none";
     }
 }
-
 
 async function logout() {
 
@@ -1013,12 +1025,22 @@ async function login(event) {
             "Connexion réussie ✓"
         );
 
-
         setTimeout(function () {
 
-            navigate("home");
+    if (
+        utilisateurConnecte &&
+        utilisateurConnecte.role === "admin"
+    ) {
 
-        }, 700);
+        navigate("admin-dashboard");
+
+    } else {
+
+        navigate("home");
+    }
+
+}, 700);
+        
 
 
     } catch (error) {
@@ -1274,6 +1296,719 @@ function homePage() {
     `;
 }
 
+function adminDashboardPage() {
+
+    const page = getPage();
+
+    if (!page) {
+        return;
+    }
+
+    page.innerHTML = `
+        <div class="container">
+
+            <section class="page-header">
+
+                <h1>
+                    Tableau de bord
+                </h1>
+
+                <p class="muted">
+                    Bienvenue dans l'espace d'administration.
+                </p>
+
+            </section>
+
+            <section class="dashboard-grid">
+
+                <div class="card dashboard-card">
+
+                    <div class="service-icon">
+                        <i class="fa-solid fa-file-circle-check"></i>
+                    </div>
+
+                    <h3>
+                        Total des demandes
+                    </h3>
+
+                    <div
+                        id="statTotalDemandes"
+                        class="dashboard-number"
+                    >
+                        ...
+                    </div>
+
+                </div>
+
+
+                <div class="card dashboard-card">
+
+                    <div class="service-icon">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+
+                    <h3>
+                        Demandes en attente
+                    </h3>
+
+                    <div
+                        id="statDemandesAttente"
+                        class="dashboard-number"
+                    >
+                        ...
+                    </div>
+
+                </div>
+
+
+                <div class="card dashboard-card">
+
+                    <div class="service-icon">
+                        <i class="fa-solid fa-calendar"></i>
+                    </div>
+
+                    <h3>
+                        Total des rendez-vous
+                    </h3>
+
+                    <div
+                        id="statTotalRendezVous"
+                        class="dashboard-number"
+                    >
+                        ...
+                    </div>
+
+                </div>
+
+
+                <div class="card dashboard-card">
+
+                    <div class="service-icon">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+
+                    <h3>
+                        Rendez-vous confirmés
+                    </h3>
+
+                    <div
+                        id="statRendezVousConfirmes"
+                        class="dashboard-number"
+                    >
+                        ...
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <section class="dashboard-actions">
+
+                <button
+                    class="btn"
+                    onclick="navigate('admin-requests')"
+                >
+                    <i class="fa-solid fa-file-circle-check"></i>
+                    Gestion des demandes
+                </button>
+
+                <button
+                    class="btn"
+                    onclick="navigate('admin-appointments')"
+                >
+                    <i class="fa-solid fa-calendar-check"></i>
+                    Gestion des rendez-vous
+                </button>
+
+                <button
+    class="btn"
+    onclick="actualiserDashboard()"
+>
+    <i class="fa-solid fa-rotate"></i>
+    Actualiser les statistiques
+</button>
+
+            </section>
+
+            <section class="card dashboard-services">
+
+    <h2>
+        Demandes par service
+    </h2>
+
+    <div id="statsServices">
+        Chargement...
+    </div>
+
+</section>
+
+<section class="card dashboard-status">
+
+    <h2>
+        Demandes par statut
+    </h2>
+
+    <div id="statsStatuts">
+        Chargement...
+    </div>
+
+</section>
+
+<section class="card dashboard-chart">
+
+    <h2>
+        Répartition des demandes
+    </h2>
+
+    <div class="chart-container">
+        <canvas id="demandesStatutChart"></canvas>
+    </div>
+
+</section>
+
+<section class="card dashboard-chart">
+
+    <h2>
+        Demandes par service
+    </h2>
+
+    <div class="chart-container">
+        <canvas id="demandesServiceChart"></canvas>
+    </div>
+
+</section>
+
+<section class="card dashboard-chart">
+
+    <h2>
+        Rendez-vous par statut
+    </h2>
+
+    <div class="chart-container">
+        <canvas id="rendezvousStatutChart"></canvas>
+    </div>
+
+</section>
+
+<section class="card dashboard-chart">
+
+    <h2>
+        Évolution des demandes
+    </h2>
+
+    <div class="chart-container">
+        <canvas id="demandesMoisChart"></canvas>
+    </div>
+
+</section>
+
+        </div>
+    `;
+
+
+    chargerStatistiquesAdmin();
+    chargerStatistiquesStatuts();
+    chargerStatistiquesRendezVous();
+    chargerStatistiquesMois();
+}
+
+async function chargerStatistiquesAdmin() {
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/admin_stats.php"
+        );
+
+        const data = await response.json();
+
+        console.log(
+            "Statistiques admin :",
+            data
+        );
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Impossible de charger les statistiques."
+            );
+
+            return;
+        }
+
+
+        document.getElementById(
+            "statTotalDemandes"
+        ).textContent =
+            data.total_demandes;
+
+
+        document.getElementById(
+            "statDemandesAttente"
+        ).textContent =
+            data.demandes_en_attente;
+
+
+        document.getElementById(
+            "statTotalRendezVous"
+        ).textContent =
+            data.total_rendezvous;
+
+
+        document.getElementById(
+            "statRendezVousConfirmes"
+        ).textContent =
+            data.rendezvous_confirmes;
+
+        chargerStatistiquesServices();
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur statistiques admin :",
+            error
+        );
+
+        showToast(
+            "Impossible de charger les statistiques."
+        );
+    }
+}
+
+async function chargerStatistiquesStatuts() {
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/admin_stats_statuts.php"
+        );
+
+        const data = await response.json();
+
+        console.log(
+            "Statistiques par statut :",
+            data
+        );
+
+        if (!data.success) {
+            return;
+        }
+
+        const container =
+            document.getElementById("statsStatuts");
+
+        if (!container) {
+            return;
+        }
+
+        if (data.statuts.length === 0) {
+
+            container.innerHTML = `
+                <p class="muted">
+                    Aucune demande enregistrée.
+                </p>
+            `;
+
+            return;
+        }
+
+        container.innerHTML =
+            data.statuts.map(function(statut) {
+
+                return `
+                    <div class="service-stat">
+
+                        <span>
+                            ${statut.statut}
+                        </span>
+
+                        <strong>
+                            ${statut.total}
+                        </strong>
+
+                    </div>
+                `;
+            
+
+            }).join("");
+
+            creerGraphiqueStatuts(data.statuts);
+
+    } catch (error) {
+
+        console.error(
+            "Erreur statistiques statuts :",
+            error
+        );
+    }
+}
+
+function creerGraphiqueStatuts(statuts) {
+
+    const canvas =
+        document.getElementById("demandesStatutChart");
+
+    if (!canvas) {
+        return;
+    }
+
+    const labels = statuts.map(function(item) {
+        return item.statut;
+    });
+
+    const valeurs = statuts.map(function(item) {
+        return item.total;
+    });
+
+    new Chart(canvas, {
+
+        type: "doughnut",
+
+        data: {
+
+            labels: labels,
+
+            datasets: [{
+                data: valeurs
+            }]
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+                    position: "bottom"
+                }
+
+            }
+
+        }
+
+    });
+}
+
+function creerGraphiqueRendezVous(statuts) {
+
+    const canvas =
+        document.getElementById("rendezvousStatutChart");
+
+    if (!canvas) {
+        console.log("Canvas du graphique rendez-vous introuvable.");
+        return;
+    }
+
+    const labels = statuts.map(function(item) {
+        return item.statut;
+    });
+
+    const valeurs = statuts.map(function(item) {
+        return item.total;
+    });
+
+    new Chart(canvas, {
+
+        type: "pie",
+
+        data: {
+
+            labels: labels,
+
+            datasets: [{
+                data: valeurs
+            }]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+                    position: "bottom"
+                }
+
+            }
+
+        }
+
+    });
+}
+
+function creerGraphiqueMois(mois) {
+
+    const canvas =
+        document.getElementById("demandesMoisChart");
+
+    if (!canvas) {
+        console.log("Canvas du graphique mensuel introuvable.");
+        return;
+    }
+
+    const labels = mois.map(function(item) {
+        return item.mois;
+    });
+
+    const valeurs = mois.map(function(item) {
+        return item.total;
+    });
+
+    new Chart(canvas, {
+
+        type: "line",
+
+        data: {
+
+            labels: labels,
+
+            datasets: [{
+                label: "Nombre de demandes",
+                data: valeurs,
+                tension: 0.3
+            }]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            scales: {
+
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+
+            },
+
+            plugins: {
+
+                legend: {
+                    position: "bottom"
+                }
+
+            }
+
+        }
+
+    });
+}
+
+async function chargerStatistiquesMois() {
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/admin_stats_mois.php"
+        );
+
+        const data = await response.json();
+
+        console.log(
+            "Statistiques mensuelles :",
+            data
+        );
+
+        if (!data.success) {
+            return;
+        }
+
+        creerGraphiqueMois(data.mois);
+
+    } catch (error) {
+
+        console.error(
+            "Erreur statistiques mensuelles :",
+            error
+        );
+    }
+}
+
+function actualiserDashboard() {
+
+    chargerStatistiquesAdmin();
+    chargerStatistiquesStatuts();
+    chargerStatistiquesRendezVous();
+    chargerStatistiquesMois();
+
+    showToast("Statistiques actualisées.");
+}
+
+async function chargerStatistiquesRendezVous() {
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/admin_stats_rendezvous.php"
+        );
+
+        const data = await response.json();
+
+        console.log(
+            "Statistiques rendez-vous :",
+            data
+        );
+
+        if (!data.success) {
+            return;
+        }
+
+        creerGraphiqueRendezVous(data.statuts);
+
+    } catch (error) {
+
+        console.error(
+            "Erreur statistiques rendez-vous :",
+            error
+        );
+    }
+}
+
+function creerGraphiqueServices(services) {
+
+    const canvas =
+        document.getElementById("demandesServiceChart");
+
+    if (!canvas) {
+        console.log("Canvas du graphique services introuvable.");
+        return;
+    }
+
+    const labels = services.map(function(item) {
+        return item.service;
+    });
+
+    const valeurs = services.map(function(item) {
+        return item.total;
+    });
+
+    new Chart(canvas, {
+
+        type: "bar",
+
+        data: {
+
+            labels: labels,
+
+            datasets: [{
+                label: "Nombre de demandes",
+                data: valeurs
+            }]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            scales: {
+
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+
+            },
+
+            plugins: {
+
+                legend: {
+                    display: false
+                }
+
+            }
+
+        }
+
+    });
+}
+
+async function chargerStatistiquesServices() {
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/admin_stats_services.php"
+        );
+
+        const data = await response.json();
+
+        console.log(
+            "Statistiques par service :",
+            data
+        );
+
+        if (!data.success) {
+            return;
+        }
+
+        const container =
+            document.getElementById("statsServices");
+
+        if (!container) {
+            return;
+        }
+
+        if (data.services.length === 0) {
+
+            container.innerHTML = `
+                <p class="muted">
+                    Aucune demande enregistrée.
+                </p>
+            `;
+
+            return;
+        }
+
+        container.innerHTML =
+            data.services.map(function(service) {
+
+                return `
+                    <div class="service-stat">
+
+                        <span>
+                            ${service.service}
+                        </span>
+
+                        <strong>
+                            ${service.total}
+                        </strong>
+
+                    </div>
+                `;
+
+            }).join("");
+
+            creerGraphiqueServices(data.services);
+
+    } catch (error) {
+
+        console.error(
+            "Erreur statistiques services :",
+            error
+        );
+    }
+}
 
 /* =========================================================
    PAGE SERVICES
@@ -1297,10 +2032,6 @@ function servicesPage() {
             <div class="section-header">
 
                 <div>
-
-                    <div class="eyebrow">
-                        SERVICES
-                    </div>
 
                     <h1>
                         Tous les services
@@ -1894,10 +2625,6 @@ async function requestsPage() {
     page.innerHTML = `
         <div class="container">
 
-            <div class="eyebrow">
-                SUIVI
-            </div>
-
             <h1>
                 Mes demandes
             </h1>
@@ -2095,17 +2822,9 @@ async function adminRequestsPage() {
     page.innerHTML = `
         <div class="container">
 
-            <div class="eyebrow">
-                ADMINISTRATION
-            </div>
-
             <h1>
                 Administration des demandes
             </h1>
-
-            <p class="muted">
-                Consultez les demandes envoyées par les utilisateurs.
-            </p>
 
             <div id="adminRequestsResult">
 
@@ -2345,6 +3064,326 @@ await adminRequestsPage();
 
         showToast(
             "Erreur lors de la modification."
+        );
+    }
+}
+
+
+/* =========================================================
+   ADMINISTRATION DES RENDEZ-VOUS
+========================================================= */
+
+async function adminAppointmentsPage() {
+
+    if (!protectAdmin()) {
+        return;
+    }
+
+    const page = getPage();
+
+    if (!page) {
+        return;
+    }
+
+    page.innerHTML = `
+        <div class="container">
+
+            <h1>
+                Administration des rendez-vous
+            </h1>                        
+
+            <div id="adminAppointmentsResult">
+
+                <p class="muted">
+                    Chargement des rendez-vous...
+                </p>
+
+            </div>
+
+        </div>
+    `;
+
+
+    const result =
+        document.getElementById(
+            "adminAppointmentsResult"
+        );
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL + "/admin_rendezvous.php",
+                {
+                    credentials: "same-origin"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Rendez-vous administrateur :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            result.innerHTML = `
+                <div class="card">
+
+                    <p class="muted">
+                        ${escapeHTML(
+                            data.message ||
+                            "Accès refusé."
+                        )}
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+
+        if (
+            !Array.isArray(data.rendezvous) ||
+            data.rendezvous.length === 0
+        ) {
+
+            result.innerHTML = `
+                <div class="card">
+
+                    <p class="muted">
+                        Aucun rendez-vous enregistré.
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+
+        result.innerHTML =
+            data.rendezvous.map(function (rendezvous) {
+
+                return `
+                    <div class="card">
+
+                        <h3>
+                            ${escapeHTML(
+                                rendezvous.demarche_nom
+                            )}
+                        </h3>
+
+
+                        <p>
+                            <strong>Citoyen :</strong>
+                            ${escapeHTML(
+                                rendezvous.prenom
+                            )}
+                            ${escapeHTML(
+                                rendezvous.nom
+                            )}
+                        </p>
+
+
+                        <p>
+                            <strong>Email :</strong>
+                            ${escapeHTML(
+                                rendezvous.email
+                            )}
+                        </p>
+
+
+                        <p>
+                            <strong>Téléphone :</strong>
+                            ${escapeHTML(
+                                rendezvous.telephone
+                            )}
+                        </p>
+
+
+                        <p>
+                            <strong>Date :</strong>
+                            ${escapeHTML(
+                                rendezvous.date_rendezvous
+                            )}
+                        </p>
+
+
+                        <p>
+                            <strong>Heure :</strong>
+                            ${escapeHTML(
+                                rendezvous.heure_rendezvous
+                            )}
+                        </p>
+
+
+                        <p>
+                            <strong>Motif :</strong>
+                            ${escapeHTML(
+                                rendezvous.motif || ""
+                            )}
+                        </p>
+
+
+                        <div style="margin-top: 15px;">
+
+                            <strong>Statut :</strong>
+
+                            <select
+                                onchange="modifierStatutRendezvous(
+                                    ${Number(rendezvous.id)},
+                                    this.value
+                                )"
+                            >
+
+                                <option
+                                    value="En attente"
+                                    ${rendezvous.statut === "En attente" ? "selected" : ""}
+                                >
+                                    En attente
+                                </option>
+
+
+                                <option
+                                    value="Confirmé"
+                                    ${rendezvous.statut === "Confirmé" ? "selected" : ""}
+                                >
+                                    Confirmé
+                                </option>
+
+
+                                <option
+                                    value="Annulé"
+                                    ${rendezvous.statut === "Annulé" ? "selected" : ""}
+                                >
+                                    Annulé
+                                </option>
+
+
+                                <option
+                                    value="Terminé"
+                                    ${rendezvous.statut === "Terminé" ? "selected" : ""}
+                                >
+                                    Terminé
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <p class="muted" style="margin-top: 10px;">
+
+                            Créé le :
+                            ${escapeHTML(
+                                rendezvous.created_at
+                            )}
+
+                        </p>
+
+                    </div>
+                `;
+
+            }).join("");
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur rendez-vous admin :",
+            error
+        );
+
+
+        result.innerHTML = `
+            <div class="card">
+
+                <p class="muted">
+                    Impossible de charger les rendez-vous.
+                </p>
+
+            </div>
+        `;
+    }
+}
+
+/* =========================================================
+   MODIFIER LE STATUT D'UN RENDEZ-VOUS
+========================================================= */
+
+async function modifierStatutRendezvous(id, statut) {
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL + "/modifier_statut_rendezvous.php",
+                {
+                    method: "POST",
+
+                    credentials: "same-origin",
+
+                    headers: {
+                        "Content-Type":
+                            "application/x-www-form-urlencoded"
+                    },
+
+                    body:
+                        "rendezvous_id=" +
+                        encodeURIComponent(id) +
+                        "&statut=" +
+                        encodeURIComponent(statut)
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Modification statut rendez-vous :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Impossible de modifier le statut du rendez-vous."
+            );
+
+            return;
+        }
+
+
+        showToast(
+            "Statut du rendez-vous modifié avec succès."
+        );
+
+
+        await adminAppointmentsPage();
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur modification statut rendez-vous :",
+            error
+        );
+
+
+        showToast(
+            "Erreur lors de la modification du statut."
         );
     }
 }
@@ -2683,7 +3722,7 @@ async function cancelRequest(id) {
    RENDEZ-VOUS
 ========================================================= */
 
-function appointmentsPage() {
+async function appointmentsPage() {
 
     if (!protect()) {
         return;
@@ -2698,56 +3737,600 @@ function appointmentsPage() {
     page.innerHTML = `
         <div class="container">
 
-            <div class="eyebrow">
-                AGENDA
-            </div>
-
             <h1>
                 Mes rendez-vous
             </h1>
 
             <p class="muted">
-                Gérez vos rendez-vous administratifs.
+                Retrouvez ici vos rendez-vous administratifs.
             </p>
 
+            <div style="margin-bottom: 20px;">
 
-            <div class="card">
+                <button
+                    class="btn"
+                    onclick="showAppointmentForm()"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    Nouveau rendez-vous
+                </button>
 
-                <div class="notification">
+            </div>
 
-                    <div class="round">
-                        <i class="fa-regular fa-calendar"></i>
-                    </div>
+            <div id="appointmentFormContainer"></div>
 
-                    <div>
+            <div id="appointmentsContainer">
 
-                        <h3>
-                            Aucun rendez-vous
-                        </h3>
-
-                        <p class="muted">
-                            Vous n'avez actuellement
-                            aucun rendez-vous programmé.
-                        </p>
-
-                        <button
-                            class="btn"
-                            onclick="showToast('Fonctionnalité de prise de rendez-vous à venir')"
-                        >
-                            <i class="fa-solid fa-plus"></i>
-                            Nouveau rendez-vous
-                        </button>
-
-                    </div>
-
-                </div>
+                <p class="muted">
+                    Chargement des rendez-vous...
+                </p>
 
             </div>
 
         </div>
     `;
+
+
+    const container =
+        document.getElementById("appointmentsContainer");
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL + "/mes_rendezvous.php",
+                {
+                    credentials: "same-origin"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Réponse mes rendez-vous :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            container.innerHTML = `
+                <div class="card">
+
+                    <p class="muted">
+                        ${escapeHTML(
+                            data.message ||
+                            "Impossible de récupérer vos rendez-vous."
+                        )}
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+
+        if (
+            !Array.isArray(data.rendezvous) ||
+            data.rendezvous.length === 0
+        ) {
+
+            container.innerHTML = `
+                <div class="card">
+
+                    <div class="notification">
+
+                        <div class="round">
+                            <i class="fa-regular fa-calendar"></i>
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Aucun rendez-vous
+                            </h3>
+
+                            <p class="muted">
+                                Vous n'avez actuellement
+                                aucun rendez-vous programmé.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            `;
+
+            return;
+        }
+
+
+        container.innerHTML = `
+
+            ${data.rendezvous.map(function (rendezvous) {
+
+                return `
+                    <div class="card">
+
+                        <div class="notification">
+
+                            <div class="round">
+                                <i class="fa-regular fa-calendar"></i>
+                            </div>
+
+                            <div>
+
+                                <h3>
+                                    ${escapeHTML(
+                                        rendezvous.demarche_nom
+                                    )}
+                                </h3>
+
+                                <p>
+                                    <strong>Date :</strong>
+                                    ${escapeHTML(
+                                        rendezvous.date_rendezvous
+                                    )}
+                                </p>
+
+                                <p>
+                                    <strong>Heure :</strong>
+                                    ${escapeHTML(
+                                        rendezvous.heure_rendezvous
+                                    )}
+                                </p>
+
+                                <p>
+                                    <strong>Motif :</strong>
+                                    ${escapeHTML(
+                                        rendezvous.motif || ""
+                                    )}
+                                </p>
+
+                                <p>
+                                    <strong>Statut :</strong>
+                                    ${escapeHTML(
+                                        rendezvous.statut
+                                    )}
+                                </p>
+
+                                <p class="muted">
+                                    Créé le :
+                                    ${escapeHTML(
+                                        rendezvous.created_at
+                                    )}
+                                </p>
+
+                                ${rendezvous.statut === "En attente" ? `
+    <button
+        class="btn"
+        type="button"
+        onclick="cancelAppointment(${rendezvous.id})"
+        style="margin-top: 10px;"
+    >
+        <i class="fa-solid fa-calendar-xmark"></i>
+        Annuler le rendez-vous
+    </button>
+` : ""}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                `;
+
+            }).join("")}
+
+        `;
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur récupération rendez-vous :",
+            error
+        );
+
+
+        container.innerHTML = `
+            <div class="card">
+
+                <p class="muted">
+                    Impossible de contacter le serveur.
+                </p>
+
+            </div>
+        `;
+    }
 }
 
+/* =========================================================
+   FORMULAIRE NOUVEAU RENDEZ-VOUS
+========================================================= */
+
+function showAppointmentForm() {
+
+    const container =
+        document.getElementById("appointmentFormContainer");
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="card appointment-form-card">
+
+            <h2>
+                Nouveau rendez-vous
+            </h2>
+
+            <form id="appointmentForm"  class="appointment-form">
+
+                <div class="form-group">
+
+                    <label for="appointmentDemarche">
+                        Démarche
+                    </label>
+
+                    <select
+                        id="appointmentDemarche"
+                        name="demarche_id"
+                        required
+                    >
+
+                        <option value="">
+                            Sélectionnez une démarche
+                        </option>
+
+                        ${Object.keys(procedures).map(function(serviceId) {
+
+                            return procedures[serviceId].map(function(procedure) {
+
+                                return `
+                                    <option value="${procedure.id}">
+                                        ${escapeHTML(procedure.title)}
+                                    </option>
+                                `;
+
+                            }).join("");
+
+                        }).join("")}
+
+                    </select>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="appointmentDate">
+                        Date
+                    </label>
+
+                    <input
+                        type="date"
+                        id="appointmentDate"
+                        name="date_rendezvous"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="appointmentTime">
+                        Heure
+                    </label>
+
+                    <input
+                        type="time"
+                        id="appointmentTime"
+                        name="heure_rendezvous"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="appointmentMotif">
+                        Motif
+                    </label>
+
+                    <textarea
+                        id="appointmentMotif"
+                        name="motif"
+                        rows="4"
+                        placeholder="Indiquez le motif du rendez-vous"
+                    ></textarea>
+
+                </div>
+
+                <div class="appointment-form-actions">
+
+    <button
+        type="submit"
+        class="btn"
+    >
+        <i class="fa-solid fa-calendar-plus"></i>
+        Ajouter le rendez-vous
+    </button>
+
+    <button
+        type="button"
+        class="btn"
+        onclick="hideAppointmentForm()"
+    >
+        Annuler
+    </button>
+
+</div>          
+
+            </form>
+
+        </div>
+    `;
+
+
+    const form =
+        document.getElementById("appointmentForm");
+
+
+    if (!form) {
+        return;
+    }
+
+
+    form.addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+
+        const demarche_id =
+            document.getElementById(
+                "appointmentDemarche"
+            ).value;
+
+
+        const date_rendezvous =
+            document.getElementById(
+                "appointmentDate"
+            ).value;
+
+
+        const heure_rendezvous =
+            document.getElementById(
+                "appointmentTime"
+            ).value;
+
+
+        const motif =
+            document.getElementById(
+                "appointmentMotif"
+            ).value;
+
+
+        if (
+            !demarche_id ||
+            !date_rendezvous ||
+            !heure_rendezvous
+        ) {
+
+            alert(
+                "Veuillez remplir les champs obligatoires."
+            );
+
+            return;
+        }
+
+
+        try {
+
+            const formData =
+                new URLSearchParams();
+
+
+            formData.append(
+                "demarche_id",
+                demarche_id
+            );
+
+            formData.append(
+                "date_rendezvous",
+                date_rendezvous
+            );
+
+            formData.append(
+                "heure_rendezvous",
+                heure_rendezvous
+            );
+
+            formData.append(
+                "motif",
+                motif
+            );
+
+
+            const response =
+                await fetch(
+                    API_BASE_URL + "/ajouter_rendezvous.php",
+                    {
+                        method: "POST",
+
+                        credentials: "same-origin",
+
+                        headers: {
+                            "Content-Type":
+                                "application/x-www-form-urlencoded"
+                        },
+
+                        body: formData.toString()
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "Réponse ajout rendez-vous :",
+                data
+            );
+
+
+            if (!data.success) {
+
+                alert(
+                    data.message ||
+                    "Impossible d'ajouter le rendez-vous."
+                );
+
+                return;
+            }
+
+
+            alert(
+                "Rendez-vous ajouté avec succès."
+            );
+
+
+            appointmentsPage();
+
+
+        } catch (error) {
+
+            console.error(
+                "Erreur ajout rendez-vous :",
+                error
+            );
+
+
+            alert(
+                "Impossible de contacter le serveur."
+            );
+        }
+
+    });
+
+}
+
+
+/* =========================================================
+   CACHER LE FORMULAIRE
+========================================================= */
+
+function hideAppointmentForm() {
+
+    const container =
+        document.getElementById(
+            "appointmentFormContainer"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = "";
+}
+
+
+/* =========================================================
+   ANNULER UN RENDEZ-VOUS
+========================================================= */
+
+async function cancelAppointment(rendezvousId) {
+
+    const confirmation = confirm(
+        "Voulez-vous vraiment annuler ce rendez-vous ?"
+    );
+
+    if (!confirmation) {
+        return;
+    }
+
+
+    try {
+
+        const formData =
+            new URLSearchParams();
+
+        formData.append(
+            "rendezvous_id",
+            rendezvousId
+        );
+
+
+        const response =
+            await fetch(
+                API_BASE_URL + "/annuler_rendezvous.php",
+                {
+                    method: "POST",
+
+                    credentials: "same-origin",
+
+                    headers: {
+                        "Content-Type":
+                            "application/x-www-form-urlencoded"
+                    },
+
+                    body: formData.toString()
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Réponse annulation rendez-vous :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            alert(
+                data.message ||
+                "Impossible d'annuler le rendez-vous."
+            );
+
+            return;
+        }
+
+
+        alert(
+            "Rendez-vous annulé avec succès."
+        );
+
+
+        // Recharger la liste
+        appointmentsPage();
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur annulation rendez-vous :",
+            error
+        );
+
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
+    }
+}
 
 /* =========================================================
    NOTIFICATIONS
@@ -3696,6 +5279,14 @@ function renderPage(route) {
 
         case "admin-requests":
             adminRequestsPage();
+            break;
+
+        case "admin-appointments":
+            adminAppointmentsPage();
+            break;
+
+        case "admin-dashboard":
+            adminDashboardPage();
             break;
 
         case "appointments":

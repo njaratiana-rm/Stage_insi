@@ -353,6 +353,7 @@ async function verifierSession() {
 
             utilisateurConnecte =
                 data.utilisateur || null;
+            await chargerNotifications();
 
         } else {
 
@@ -409,6 +410,7 @@ function updateHeader() {
     }
         updateAdminNav();
 }
+
 function updateAdminNav() {
 
     const dashboardLink =
@@ -419,9 +421,9 @@ function updateAdminNav() {
 
     const appointmentsLink =
         document.getElementById("adminAppointmentsLink");
-    
+
     const usersLink =
-    document.getElementById("adminUsersLink");
+        document.getElementById("adminUsersLink");
 
     if (
         !dashboardLink ||
@@ -434,14 +436,32 @@ function updateAdminNav() {
 
     if (
         sessionConnectee &&
-        utilisateurConnecte &&
-        utilisateurConnecte.role === "admin"
+        utilisateurConnecte
     ) {
 
-        dashboardLink.style.display = "";
-        link.style.display = "";
-        appointmentsLink.style.display = "";
-        usersLink.style.display = "";
+        // Dashboard accessible à l'admin et au responsable
+        if (
+            utilisateurConnecte.role === "admin" ||
+            utilisateurConnecte.role === "responsable"
+        ) {
+            dashboardLink.style.display = "";
+        } else {
+            dashboardLink.style.display = "none";
+        }
+
+        // Gestion réservée à l'admin
+        if (utilisateurConnecte.role === "admin") {
+
+            link.style.display = "";
+            appointmentsLink.style.display = "";
+            usersLink.style.display = "";
+
+        } else {
+
+            link.style.display = "none";
+            appointmentsLink.style.display = "none";
+            usersLink.style.display = "none";
+        }
 
     } else {
 
@@ -451,6 +471,7 @@ function updateAdminNav() {
         usersLink.style.display = "none";
     }
 }
+
 
 async function logout() {
 
@@ -1035,7 +1056,8 @@ async function login(event) {
 
     if (
         utilisateurConnecte &&
-        utilisateurConnecte.role === "admin"
+        utilisateurConnecte.role === "admin" ||
+        utilisateurConnecte.role === "responsable"
     ) {
 
         navigate("admin-dashboard");
@@ -1320,7 +1342,7 @@ function adminDashboardPage() {
                 </h1>
 
                 <p class="muted">
-                    Bienvenue dans l'espace d'administration.
+                    Bienvenue dans votre espace de suivi statistique.
                 </p>
 
             </section>
@@ -1518,6 +1540,8 @@ function adminDashboardPage() {
     chargerStatistiquesRendezVous();
     chargerStatistiquesMois();
 }
+
+
 
 async function chargerStatistiquesAdmin() {
 
@@ -4341,8 +4365,7 @@ async function cancelAppointment(rendezvousId) {
 /* =========================================================
    NOTIFICATIONS
 ========================================================= */
-
-function notificationsPage() {
+async function notificationsPage() {
 
     if (!protect()) {
         return;
@@ -4365,70 +4388,145 @@ function notificationsPage() {
                 Notifications
             </h1>
 
+            <div class="card" id="notificationsContainer">
 
-            <div class="card">
-
-                <div class="notification">
-
-                    <div class="round">
-                        <i class="fa-solid fa-info"></i>
-                    </div>
-
-                    <div>
-
-                        <h3>
-                            Bienvenue sur ADMIN'GUIDE
-                        </h3>
-
-                        <p class="muted">
-                            Retrouvez ici les informations
-                            importantes concernant vos démarches.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <hr>
-
-
-                <div class="notification">
-
-                    <div class="round">
-                        <i class="fa-solid fa-robot"></i>
-                    </div>
-
-                    <div>
-
-                        <h3>
-                            Assistant IA disponible
-                        </h3>
-
-                        <p class="muted">
-                            Vous pouvez utiliser l'assistant
-                            pour trouver le service adapté
-                            à votre besoin.
-                        </p>
-
-                    </div>
-
-                </div>
+                <p class="muted">
+                    Chargement des notifications...
+                </p>
 
             </div>
 
         </div>
     `;
 
+    try {
 
-    const notifBadge = getNotifBadge();
+        const response = await fetch(
+            API_BASE_URL + "/notifications.php",
+            {
+                credentials: "same-origin"
+            }
+        );
 
-    if (notifBadge) {
-        notifBadge.textContent = "0";
+        const data = await response.json();
+
+        if (!data.success) {
+
+            document.getElementById(
+                "notificationsContainer"
+            ).innerHTML = `
+                <p class="muted">
+                    Impossible de charger les notifications.
+                </p>
+            `;
+
+            return;
+        }
+
+        const container =
+            document.getElementById(
+                "notificationsContainer"
+            );
+
+        if (!data.notifications.length) {
+
+            container.innerHTML = `
+                <p class="muted">
+                    Aucune notification.
+                </p>
+            `;
+
+            return;
+        }
+
+        container.innerHTML =
+            data.notifications.map(function(notification) {
+
+                return `
+                    <div class="notification">
+
+                    <div class="round">
+    <i class="fa-solid ${
+        notification.type === "rendezvous"
+            ? "fa-calendar-check"
+            : "fa-file-circle-check"
+    }"></i>
+</div>
+
+                        <div>
+
+                        <h3>
+    ${notification.type === "rendezvous"
+        ? "Rendez-vous"
+        : "Demande"}
+</h3>
+
+                            <p class="muted">
+                                ${escapeHTML(notification.message)}
+                            </p>
+
+                            <small class="muted">
+                                ${escapeHTML(notification.date_creation)}
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                    <hr>
+                `;
+
+            }).join("");
+
+            for (const notification of data.notifications) {
+
+    if (Number(notification.lu) === 0) {
+
+        const formData = new URLSearchParams();
+
+        formData.append(
+            "notification_id",
+            notification.id
+        );
+
+        await fetch(
+            API_BASE_URL + "/marquer_notification_lue.php",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/x-www-form-urlencoded"
+                },
+                body: formData.toString(),
+                credentials: "same-origin"
+            }
+        );
     }
 }
 
+        const notifBadge = getNotifBadge();
 
+        if (notifBadge) {
+            notifBadge.textContent = "0";
+            notifBadge.style.display = "none";
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Erreur chargement notifications :",
+            error
+        );
+
+        document.getElementById(
+            "notificationsContainer"
+        ).innerHTML = `
+            <p class="muted">
+                Erreur lors du chargement des notifications.
+            </p>
+        `;
+    }
+}
 /* =========================================================
    PROFIL
 ========================================================= */
@@ -5220,6 +5318,32 @@ async function searchService() {
 }
 
 
+function protectDashboard() {
+
+    if (!sessionConnectee) {
+        navigate("login");
+        return false;
+    }
+
+    if (
+        !utilisateurConnecte ||
+        (
+            utilisateurConnecte.role !== "admin" &&
+            utilisateurConnecte.role !== "responsable"
+        )
+    ) {
+        showToast(
+            "Accès au tableau de bord refusé."
+        );
+
+        navigate("home");
+
+        return false;
+    }
+
+    return true;
+}
+
 /* =========================================================
    RENDU DES PAGES
 ========================================================= */
@@ -5290,10 +5414,17 @@ function renderPage(route) {
         case "admin-appointments":
             adminAppointmentsPage();
             break;
-
+        
         case "admin-dashboard":
-            adminDashboardPage();
-            break;
+
+    if (!protectDashboard()) {
+        return;
+    }
+
+    adminDashboardPage();
+
+    break;
+
         
         case "admin-users":
     adminUsersPage();
@@ -5511,6 +5642,10 @@ console.log(
 );
  
 function adminUsersPage() {
+
+     if (!protectAdmin()) {
+        return;
+    }
 
     const page = getPage();
 
@@ -5733,5 +5868,60 @@ async function modifierRoleUtilisateur(id, role) {
         console.error("Erreur modification rôle :", error);
 
         showToast("Erreur lors de la modification du rôle.");
+    }
+}
+
+async function chargerNotifications() {
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/notifications.php",
+            {
+                credentials: "same-origin"
+            }
+        );
+
+        const data = await response.json();
+
+        console.log(
+            "Notifications :",
+            data
+        );
+
+        if (!data.success) {
+            console.error(
+                data.message ||
+                "Impossible de charger les notifications."
+            );
+            return;
+        }
+
+        const badge =
+            document.getElementById("notifBadge");
+
+        if (!badge) {
+            return;
+        }
+
+        const notificationsNonLues =
+            data.notifications.filter(function(notification) {
+                return Number(notification.lu) === 0;
+            }).length;
+
+        badge.textContent = notificationsNonLues;
+
+        if (notificationsNonLues === 0) {
+            badge.style.display = "none";
+        } else {
+            badge.style.display = "inline-flex";
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Erreur chargement notifications :",
+            error
+        );
     }
 }

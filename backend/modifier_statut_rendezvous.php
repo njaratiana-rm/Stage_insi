@@ -86,45 +86,78 @@ try {
     ===================================================== */
 
     $sql = "
-        SELECT id
-        FROM rendezvous
-        WHERE id = :id
-    ";
+    SELECT id, user_id
+    FROM rendezvous
+    WHERE id = :id
+";
 
-    $stmt = $pdo->prepare($sql);
+$stmt = $pdo->prepare($sql);
 
-    $stmt->execute([
-        ":id" => $rendezvous_id
+$stmt->execute([
+    ":id" => $rendezvous_id
+]);
+
+$rendezvous = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$rendezvous) {
+
+    echo json_encode([
+        "success" => false,
+        "message" => "Rendez-vous introuvable."
     ]);
 
+    exit;
+}
 
-    if (!$stmt->fetch()) {
-
-        echo json_encode([
-            "success" => false,
-            "message" => "Rendez-vous introuvable."
-        ]);
-
-        exit;
-    }
-
+$utilisateur_id = $rendezvous["user_id"];   
 
     /* =====================================================
        MODIFIER LE STATUT
     ===================================================== */
-
     $sql = "
-        UPDATE rendezvous
-        SET statut = :statut
-        WHERE id = :id
-    ";
+    UPDATE rendezvous
+    SET statut = :statut
+    WHERE id = :id
+";
 
-    $stmt = $pdo->prepare($sql);
+$stmt = $pdo->prepare($sql);
 
-    $stmt->execute([
-        ":statut" => $statut,
-        ":id" => $rendezvous_id
-    ]);
+$stmt->execute([
+    ":statut" => $statut,
+    ":id" => $rendezvous_id
+]);
+
+
+/* =====================================================
+   CRÉER LA NOTIFICATION
+===================================================== */
+
+$message = "Le statut de votre rendez-vous a été modifié : " . $statut . ".";
+
+$sql = "
+    INSERT INTO notifications
+    (
+        utilisateur_id,
+        type,
+        message,
+        lu
+    )
+    VALUES
+    (
+        :utilisateur_id,
+        :type,
+        :message,
+        0
+    )
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    ":utilisateur_id" => $utilisateur_id,
+    ":type" => "rendezvous",
+    ":message" => $message
+]);
 
 
     echo json_encode([

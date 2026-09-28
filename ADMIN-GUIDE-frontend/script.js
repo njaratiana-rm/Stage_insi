@@ -419,11 +419,15 @@ function updateAdminNav() {
 
     const appointmentsLink =
         document.getElementById("adminAppointmentsLink");
+    
+    const usersLink =
+    document.getElementById("adminUsersLink");
 
     if (
         !dashboardLink ||
         !link ||
-        !appointmentsLink
+        !appointmentsLink ||
+        !usersLink
     ) {
         return;
     }
@@ -437,12 +441,14 @@ function updateAdminNav() {
         dashboardLink.style.display = "";
         link.style.display = "";
         appointmentsLink.style.display = "";
+        usersLink.style.display = "";
 
     } else {
 
         dashboardLink.style.display = "none";
         link.style.display = "none";
         appointmentsLink.style.display = "none";
+        usersLink.style.display = "none";
     }
 }
 
@@ -5288,6 +5294,10 @@ function renderPage(route) {
         case "admin-dashboard":
             adminDashboardPage();
             break;
+        
+        case "admin-users":
+    adminUsersPage();
+    break;
 
         case "appointments":
             appointmentsPage();
@@ -5499,3 +5509,229 @@ console.log(
         renderPage(route);
     }
 );
+ 
+function adminUsersPage() {
+
+    const page = getPage();
+
+    if (!page) {
+        return;
+    }
+
+    page.innerHTML = `
+        <div class="container">
+
+            <section class="page-header">
+
+                <h1>
+                    Gestion des utilisateurs
+                </h1>
+
+                <p class="muted">
+                    Consultez les utilisateurs inscrits sur la plateforme.
+                </p>
+
+            </section>
+
+            <section class="card">
+
+                <div id="adminUsersContainer">
+                    Chargement des utilisateurs...
+                </div>
+
+            </section>
+
+        </div>
+    `;
+
+    chargerUtilisateursAdmin();
+}
+
+async function chargerUtilisateursAdmin() {
+
+    const container =
+        document.getElementById("adminUsersContainer");
+
+    if (!container) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/admin_utilisateurs.php"
+        );
+
+        const data = await response.json();
+
+        console.log(
+            "Utilisateurs admin :",
+            data
+        );
+
+        if (!data.success) {
+
+            container.innerHTML = `
+                <p>
+                    Impossible de charger les utilisateurs.
+                </p>
+            `;
+
+            return;
+        }
+
+        if (data.utilisateurs.length === 0) {
+
+            container.innerHTML = `
+                <p>
+                    Aucun utilisateur enregistré.
+                </p>
+            `;
+
+            return;
+        }
+
+        let html = `
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom</th>
+                            <th>Prénom</th>
+                            <th>Email</th>
+                            <th>Téléphone</th>
+                            <th>Rôle</th>
+                            <th>Date de création</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+        `;
+
+        data.utilisateurs.forEach(function(utilisateur) {
+
+            html += `
+                <tr>
+
+                    <td>${utilisateur.id}</td>
+
+                    <td>${utilisateur.nom}</td>
+
+                    <td>${utilisateur.prenom}</td>
+
+                    <td>${utilisateur.email}</td>
+
+                    <td>${utilisateur.telephone || ""}</td>
+
+                    <td>
+
+    <select
+        onchange="modifierRoleUtilisateur(${utilisateur.id}, this.value)"
+    >
+
+        <option value="user"
+            ${utilisateur.role === "user" ? "selected" : ""}>
+            Ancien rôle
+        </option>
+
+        <option value="citoyen"
+            ${utilisateur.role === "citoyen" ? "selected" : ""}>
+            Citoyen
+        </option>
+
+        <option value="agent"
+            ${utilisateur.role === "agent" ? "selected" : ""}>
+            Agent
+        </option>
+
+        <option value="responsable"
+            ${utilisateur.role === "responsable" ? "selected" : ""}>
+            Responsable
+        </option>
+
+        <option value="admin"
+            ${utilisateur.role === "admin" ? "selected" : ""}>
+            Administrateur
+        </option>
+
+    </select>
+
+</td>
+
+<td>${utilisateur.date_creation}</td>
+
+<td>
+    Modification du rôle
+</td>
+
+                </tr>
+            `;
+
+        });
+
+        html += `
+                    </tbody>
+
+                </table>
+
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+    } catch (error) {
+
+        console.error(
+            "Erreur utilisateurs admin :",
+            error
+        );
+
+        container.innerHTML = `
+            <p>
+                Impossible de charger les utilisateurs.
+            </p>
+        `;
+    }
+}
+
+async function modifierRoleUtilisateur(id, role) {
+    try {
+        const formData = new FormData();
+
+        formData.append("id", id);
+        formData.append("role", role);
+
+        const response = await fetch(
+            API_BASE_URL + "/admin_utilisateurs.php",
+            {
+                method: "POST",
+                body: formData,
+                credentials: "include"
+            }
+        );
+
+        const data = await response.json();
+
+        console.log("Réponse modification rôle :", data);
+
+        if (!data.success) {
+            showToast(
+                data.message || "Impossible de modifier le rôle."
+            );
+            return;
+        }
+
+        showToast("Rôle modifié avec succès.");
+
+        await chargerUtilisateursAdmin();
+
+    } catch (error) {
+        console.error("Erreur modification rôle :", error);
+
+        showToast("Erreur lors de la modification du rôle.");
+    }
+}

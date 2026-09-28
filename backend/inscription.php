@@ -65,9 +65,10 @@ try {
     );
 
     $sql = "INSERT INTO utilisateurs
-            (nom, prenom, email, telephone, mot_de_passe)
-            VALUES
-            (:nom, :prenom, :email, :telephone, :mot_de_passe)";
+        (nom, prenom, email, telephone, mot_de_passe, role)
+        VALUES
+        (:nom, :prenom, :email, :telephone, :mot_de_passe, 'citoyen')";
+    
 
     $stmt = $pdo->prepare($sql);
 

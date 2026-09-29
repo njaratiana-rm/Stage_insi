@@ -39,7 +39,13 @@ try {
     if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $id = intval($_POST["id"] ?? 0);
-        $role = trim($_POST["role"] ?? "");
+$role = trim($_POST["role"] ?? "");
+
+$service_id = null;
+
+if (isset($_POST["service_id"]) && $_POST["service_id"] !== "") {
+    $service_id = intval($_POST["service_id"]);
+}
 
         $rolesAutorises = [
             "citoyen",
@@ -68,6 +74,18 @@ try {
             exit;
         }
 
+        $servicesAutorises = [1, 2, 3, 4, 5, 6];
+
+if ($service_id !== null && !in_array($service_id, $servicesAutorises, true)) {
+
+    echo json_encode([
+        "success" => false,
+        "message" => "Service invalide."
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 
         /*
          * Empêcher l'administrateur de modifier son propre rôle
@@ -82,17 +100,18 @@ try {
             exit;
         }
 
-
         $stmt = $pdo->prepare("
-            UPDATE utilisateurs
-            SET role = :role
-            WHERE id = :id
-        ");
+    UPDATE utilisateurs
+    SET role = :role,
+        service_id = :service_id
+    WHERE id = :id
+");
 
-        $stmt->execute([
-            ":role" => $role,
-            ":id" => $id
-        ]);
+$stmt->execute([
+    ":role" => $role,
+    ":service_id" => $service_id,
+    ":id" => $id
+]);
 
 
         echo json_encode([
@@ -107,18 +126,20 @@ try {
     /*
      * AFFICHAGE DES UTILISATEURS
      */
+
     $sql = "
-        SELECT
-            id,
-            nom,
-            prenom,
-            email,
-            telephone,
-            date_creation,
-            role
-        FROM utilisateurs
-        ORDER BY date_creation DESC
-    ";
+    SELECT
+        id,
+        nom,
+        prenom,
+        email,
+        telephone,
+        date_creation,
+        role,
+        service_id
+    FROM utilisateurs
+    ORDER BY date_creation DESC
+";
 
     $stmt = $pdo->query($sql);
 

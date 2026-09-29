@@ -508,3 +508,47 @@ h3 i {
     height: 350px;
     margin-top: 20px;
 }
+
+.nav-actions {
+    position: relative;
+}
+
+.profile-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 210px;
+    background: white;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+}
+
+.profile-menu.show {
+    display: block;
+}
+
+.profile-menu button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.profile-menu button:hover {
+    background: #f1f3f5;
+}
+
+.profile-menu hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 6px 0;
+}

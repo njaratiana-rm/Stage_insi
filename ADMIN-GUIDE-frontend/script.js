@@ -4,6 +4,64 @@
 
 const API_BASE_URL = "http://localhost/stage/backend";
 
+const profileBtn =
+    document.getElementById("profileBtn");
+
+if (profileBtn) {
+
+    profileBtn.addEventListener(
+        "click",
+        toggleProfileMenu
+    );
+
+}
+
+document.addEventListener("click", function (event) {
+
+    const profileBtn =
+        document.getElementById("profileBtn");
+
+    const profileMenu =
+        document.getElementById("profileMenu");
+
+    if (!profileBtn || !profileMenu) {
+        return;
+    }
+
+    const clicSurProfil =
+        profileBtn.contains(event.target);
+
+    const clicDansMenu =
+        profileMenu.contains(event.target);
+
+    if (!clicSurProfil && !clicDansMenu) {
+
+        profileMenu.classList.remove("show");
+
+    }
+
+});
+
+const logoutBtn =
+    document.getElementById("logoutBtn");
+
+if (logoutBtn) {
+
+    logoutBtn.addEventListener(
+        "click",
+        async function () {
+
+            const profileMenu =
+                document.getElementById("profileMenu");
+
+            if (profileMenu) {
+                profileMenu.classList.remove("show");
+            }
+
+            await logout();
+        }
+    );
+}
 
 /* =========================================================
    ELEMENTS
@@ -353,6 +411,11 @@ async function verifierSession() {
 
             utilisateurConnecte =
                 data.utilisateur || null;
+
+                console.log(
+    "Utilisateur connecté :",
+    utilisateurConnecte
+);
             await chargerNotifications();
 
         } else {
@@ -381,34 +444,68 @@ async function verifierSession() {
     return sessionConnectee;
 }
 
-
 function updateHeader() {
 
-    const logged =
-        sessionConnectee;
+    const logged = sessionConnectee;
+
+    const navbar = document.querySelector(".navbar");
+
+    const footer = document.querySelector("footer");
+
+    const profileName = document.getElementById("profileName");
 
 
-    const navbar =
-        document.querySelector(".navbar");
-
-
-    const footer =
-        document.querySelector("footer");
-
-
+    // Afficher ou cacher la navbar
     if (navbar) {
-
-        navbar.style.display =
-            logged ? "flex" : "none";
+        navbar.style.display = logged ? "flex" : "none";
     }
 
 
+    // Afficher ou cacher le footer
     if (footer) {
-
-        footer.style.display =
-            logged ? "flex" : "none";
+        footer.style.display = logged ? "flex" : "none";
     }
-        updateAdminNav();
+
+
+    // Afficher le nom de l'utilisateur connecté
+    if (profileName) {
+
+        if (logged && utilisateurConnecte) {
+
+            const prenom =
+                utilisateurConnecte.prenom || "";
+
+            const nom =
+                utilisateurConnecte.nom || "";
+
+            const nomComplet =
+                `${prenom} ${nom}`.trim();
+
+            profileName.textContent =
+                nomComplet || "Utilisateur";
+
+        } else {
+
+            profileName.textContent =
+                "Utilisateur";
+        }
+    }
+
+
+    // Mettre à jour les menus selon le rôle
+    updateAdminNav();
+}
+
+function toggleProfileMenu() {
+
+    const profileMenu =
+        document.getElementById("profileMenu");
+
+    if (!profileMenu) {
+        return;
+    }
+
+    profileMenu.classList.toggle("show");
 }
 
 function updateAdminNav() {
@@ -425,31 +522,56 @@ function updateAdminNav() {
     const usersLink =
         document.getElementById("adminUsersLink");
 
+    const agentSpaceLink =
+        document.getElementById("agentSpaceLink");
+
+    const citizenRequestsLink =
+    document.getElementById("citizenRequestsLink");
+
+const citizenAppointmentsLink =
+    document.getElementById("citizenAppointmentsLink");
+
     if (
-        !dashboardLink ||
-        !link ||
-        !appointmentsLink ||
-        !usersLink
-    ) {
-        return;
-    }
+    !dashboardLink ||
+    !link ||
+    !appointmentsLink ||
+    !usersLink ||
+    !agentSpaceLink ||
+    !citizenRequestsLink ||
+    !citizenAppointmentsLink
+) {
+    return;
+}
+
 
     if (
         sessionConnectee &&
         utilisateurConnecte
     ) {
 
-        // Dashboard accessible à l'admin et au responsable
+        // ==============================
+        // TABLEAU DE BORD
+        // Admin + Responsable
+        // ==============================
+
         if (
             utilisateurConnecte.role === "admin" ||
             utilisateurConnecte.role === "responsable"
         ) {
+
             dashboardLink.style.display = "";
+
         } else {
+
             dashboardLink.style.display = "none";
         }
 
-        // Gestion réservée à l'admin
+
+        // ==============================
+        // GESTION ADMIN
+        // Admin uniquement
+        // ==============================
+
         if (utilisateurConnecte.role === "admin") {
 
             link.style.display = "";
@@ -463,15 +585,53 @@ function updateAdminNav() {
             usersLink.style.display = "none";
         }
 
+
+        // ==============================
+        // ESPACE AGENT
+        // Agent uniquement
+        // ==============================
+
+        if (utilisateurConnecte.role === "agent") {
+
+            agentSpaceLink.style.display = "";
+
+        } else {
+
+            agentSpaceLink.style.display = "none";
+        }
+
+        // ==============================
+// FONCTIONS CITOYEN
+// Citoyen uniquement
+// ==============================
+
+if (utilisateurConnecte.role === "citoyen") {
+
+    citizenRequestsLink.style.display = "";
+    citizenAppointmentsLink.style.display = "";
+
+} else {
+
+    citizenRequestsLink.style.display = "none";
+    citizenAppointmentsLink.style.display = "none";
+}
+
+
     } else {
+
+        // ==============================
+        // UTILISATEUR NON CONNECTÉ
+        // ==============================
 
         dashboardLink.style.display = "none";
         link.style.display = "none";
         appointmentsLink.style.display = "none";
         usersLink.style.display = "none";
+        agentSpaceLink.style.display = "none";
+        citizenRequestsLink.style.display = "none";
+citizenAppointmentsLink.style.display = "none";
     }
 }
-
 
 async function logout() {
 
@@ -920,6 +1080,9 @@ async function register(event) {
 
 
     try {
+
+        console.log("URL inscription :", API_BASE_URL + "/inscription.php");
+console.log("Données inscription :", donnees.toString());
 
         const response =
             await fetch(
@@ -1541,7 +1704,1092 @@ function adminDashboardPage() {
     chargerStatistiquesMois();
 }
 
+function agentSpacePage() {
 
+    const page = getPage();
+
+    if (!page) {
+        return;
+    }
+
+    page.innerHTML = `
+    <div class="container">
+
+        <section class="page-header">
+
+            <h1>
+                Espace agent
+            </h1>
+
+            <p class="muted">
+                Bienvenue dans votre espace de travail.
+            </p>
+
+        </section>
+
+
+        <section class="dashboard-grid">
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+
+                <div>
+
+                    <span class="stat-label">
+                        Agent connecté
+                    </span>
+
+                    <strong>
+                        ${escapeHTML(
+                            utilisateurConnecte?.prenom || ""
+                        )}
+                        ${escapeHTML(
+                            utilisateurConnecte?.nom || ""
+                        )}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    <i class="fa-solid fa-building"></i>
+                </div>
+
+                <div>
+
+                    <span class="stat-label">
+                        Service
+                    </span>
+
+                    <strong id="agentServiceName">
+                        Chargement...
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="page-header">
+
+            <h2>
+                Demandes de votre service
+            </h2>
+
+            <p class="muted">
+                Voici les demandes liées à votre service.
+            </p>
+
+        </section>
+
+
+        <div id="agentRequestsList">
+
+            <p class="muted">
+                Chargement des demandes...
+            </p>
+
+        </div>
+
+
+        <section class="page-header">
+
+            <h2>
+                Rendez-vous de votre service
+            </h2>
+
+            <p class="muted">
+                Voici les rendez-vous liés à votre service.
+            </p>
+
+        </section>
+
+
+        <div id="agentAppointmentsList">
+
+            <p class="muted">
+                Chargement des rendez-vous...
+            </p>
+
+        </div>
+
+    </div>
+`;
+
+    chargerDemandesAgent();
+    chargerRendezVousAgent();
+}
+
+async function chargerRendezVousAgent() {
+
+    const liste =
+        document.getElementById(
+            "agentAppointmentsList"
+        );
+
+    if (!liste) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL +
+            "/agent_rendezvous.php",
+            {
+                credentials: "include"
+            }
+        );
+
+        const data =
+            await response.json();
+
+        console.log(
+            "Rendez-vous agent :",
+            data
+        );
+
+        if (!data.success) {
+
+            liste.innerHTML = `
+                <p class="muted">
+                    ${escapeHTML(
+                        data.message ||
+                        "Impossible de récupérer les rendez-vous."
+                    )}
+                </p>
+            `;
+
+            return;
+        }
+
+        if (
+            !data.rendezvous ||
+            data.rendezvous.length === 0
+        ) {
+
+            liste.innerHTML = `
+                <div class="empty-state">
+
+                    <i class="fa-regular fa-calendar"></i>
+
+                    <p>
+                        Aucun rendez-vous pour votre service.
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+        liste.innerHTML =
+            data.rendezvous.map(
+                rendezvous => `
+
+                    <div class="request-card">
+
+                        <div>
+
+                            <h3>
+                                ${escapeHTML(
+                                    rendezvous.demarche
+                                )}
+                            </h3>
+
+                            <p class="muted">
+
+                                Rendez-vous
+                                #${rendezvous.id}
+
+                                <br>
+
+                                Citoyen :
+                                ${escapeHTML(
+                                    rendezvous.prenom
+                                )}
+                                ${escapeHTML(
+                                    rendezvous.nom
+                                )}
+
+                                <br>
+
+                                Email :
+                                ${escapeHTML(
+                                    rendezvous.email
+                                )}
+
+                                <br>
+
+                                Date :
+                                ${escapeHTML(
+                                    rendezvous.date_rendezvous
+                                )}
+
+                                <br>
+
+                                Heure :
+                                ${escapeHTML(
+                                    rendezvous.heure_rendezvous
+                                )}
+
+                                <br>
+
+                                Motif :
+                                ${escapeHTML(
+                                    rendezvous.motif
+                                )}
+
+                            </p>
+
+                        </div>
+
+                        <div>
+
+                            <span class="status">
+
+                                ${escapeHTML(
+                                    rendezvous.statut
+                                )}
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                `
+            ).join("");
+
+    } catch (error) {
+
+        console.error(
+            "Erreur chargement rendez-vous agent :",
+            error
+        );
+
+        liste.innerHTML = `
+            <p class="muted">
+                Erreur lors du chargement des rendez-vous.
+            </p>
+        `;
+    }
+}
+
+async function voirRendezVousAgent(id) {
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL +
+            "/agent_rendezvous_details.php?id=" +
+            id,
+            {
+                credentials: "include"
+            }
+        );
+
+        const data =
+            await response.json();
+
+        console.log(
+            "Détails rendez-vous agent :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Impossible de récupérer le rendez-vous."
+            );
+
+            return;
+        }
+
+
+        const rendezvous =
+            data.rendezvous;
+
+
+        const page = getPage();
+
+        if (!page) {
+            return;
+        }
+
+
+        page.innerHTML = `
+
+            <div class="container">
+
+
+                <section class="page-header">
+
+                    <h1>
+                        Détail du rendez-vous
+                    </h1>
+
+                    <p class="muted">
+                        Rendez-vous #${rendezvous.id}
+                    </p>
+
+                </section>
+
+
+                <section class="card">
+
+                    <h2>
+                        ${escapeHTML(
+                            rendezvous.demarche
+                        )}
+                    </h2>
+
+                        <p>
+    <strong>Statut :</strong>
+</p>
+
+<select id="agentRendezVousStatut" class="form-control">
+    <option
+        value="En attente"
+        ${rendezvous.statut === "En attente" ? "selected" : ""}
+    >
+        En attente
+    </option>
+
+    <option
+        value="Confirmé"
+        ${rendezvous.statut === "Confirmé" ? "selected" : ""}
+    >
+        Confirmé
+    </option>
+
+    <option
+        value="Annulé"
+        ${rendezvous.statut === "Annulé" ? "selected" : ""}
+    >
+        Annulé
+    </option>
+</select>
+
+<br>
+
+<button
+    class="btn"
+    onclick="modifierStatutRendezVousAgent(${rendezvous.id})"
+>
+    <i class="fa-solid fa-pen"></i>
+    Modifier le statut
+</button>
+
+
+                    <p>
+                        <strong>Date :</strong>
+                        ${escapeHTML(
+                            rendezvous.date_rendezvous
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Heure :</strong>
+                        ${escapeHTML(
+                            rendezvous.heure_rendezvous
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Motif :</strong>
+                        ${escapeHTML(
+                            rendezvous.motif
+                        )}
+                    </p>
+
+                </section>
+
+
+                <section class="card">
+
+                    <h2>
+                        Informations du citoyen
+                    </h2>
+
+
+                    <p>
+                        <strong>Nom :</strong>
+                        ${escapeHTML(
+                            rendezvous.nom
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Prénom :</strong>
+                        ${escapeHTML(
+                            rendezvous.prenom
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Email :</strong>
+                        ${escapeHTML(
+                            rendezvous.email
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Téléphone :</strong>
+                        ${escapeHTML(
+                            rendezvous.telephone
+                        )}
+                    </p>
+
+                </section>
+
+
+                <button
+                    class="btn"
+                    onclick="navigate('agent-space')"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Retour aux rendez-vous
+                </button>
+
+
+            </div>
+
+        `;
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur détail rendez-vous agent :",
+            error
+        );
+
+        showToast(
+            "Erreur lors du chargement du rendez-vous."
+        );
+    }
+}
+
+async function modifierStatutRendezVousAgent(id) {
+    try {
+        const select = document.getElementById(
+            "agentRendezVousStatut"
+        );
+
+        if (!select) {
+            showToast(
+                "Impossible de récupérer le nouveau statut."
+            );
+            return;
+        }
+
+        const nouveauStatut = select.value;
+
+        const formData = new FormData();
+
+        formData.append("id", id);
+        formData.append("statut", nouveauStatut);
+
+        const response = await fetch(
+            API_BASE_URL +
+            "/agent_modifier_statut_rendezvous.php",
+            {
+                method: "POST",
+                body: formData,
+                credentials: "include"
+            }
+        );
+
+        const data = await response.json();
+
+        console.log(
+            "Modification statut rendez-vous agent :",
+            data
+        );
+
+        if (!data.success) {
+            showToast(
+                data.message ||
+                "Impossible de modifier le statut."
+            );
+            return;
+        }
+
+        showToast(
+            "Statut du rendez-vous modifié avec succès."
+        );
+
+        await voirRendezVousAgent(id);
+
+    } catch (error) {
+        console.error(
+            "Erreur modification statut rendez-vous agent :",
+            error
+        );
+
+        showToast(
+            "Erreur lors de la modification du statut."
+        );
+    }
+}
+
+async function chargerDemandesAgent() {
+
+    const liste =
+        document.getElementById("agentRequestsList");
+
+    const service =
+        document.getElementById("agentServiceName");
+
+
+    if (!liste) {
+        return;
+    }
+
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/agent_demandes.php",
+            {
+                credentials: "include"
+            }
+        );
+
+
+        const data = await response.json();
+
+
+        console.log(
+            "Demandes agent :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            liste.innerHTML = `
+                <p class="muted">
+                    ${escapeHTML(
+                        data.message ||
+                        "Impossible de récupérer les demandes."
+                    )}
+                </p>
+            `;
+
+            return;
+        }
+
+
+        // Service
+        if (service) {
+
+            const nomsServices = {
+
+                1: "État civil",
+                2: "Fiscalité",
+                3: "Foncier",
+                4: "Entreprise",
+                5: "Social",
+                6: "Transport"
+
+            };
+
+            service.textContent =
+                nomsServices[data.service_id]
+                || "Service inconnu";
+        }
+
+
+        // Aucune demande
+        if (
+            !data.demandes ||
+            data.demandes.length === 0
+        ) {
+
+            liste.innerHTML = `
+                <div class="empty-state">
+
+                    <i class="fa-regular fa-folder-open"></i>
+
+                    <p>
+                        Aucune demande pour votre service.
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+
+        // Affichage des demandes
+        liste.innerHTML = data.demandes.map(
+            demande => `
+
+                <div class="request-card">
+
+                    <div>
+
+                        <h3>
+                            ${escapeHTML(
+                                demande.demarche
+                            )}
+                        </h3>
+
+                        <p class="muted">
+
+                            Demande #${demande.id}
+
+                            <br>
+
+                            Date :
+                            ${escapeHTML(
+                                demande.date_demande
+                            )}
+
+                        </p>
+
+                    </div>
+
+                    <div>
+
+    <span class="status">
+
+        ${escapeHTML(
+            demande.statut
+        )}
+
+    </span>
+
+    <br><br>
+
+    <button
+        class="btn"
+        onclick="voirDemandeAgent(${demande.id})"
+    >
+        <i class="fa-solid fa-eye"></i>
+        Voir les détails
+    </button>
+
+</div>
+
+                </div>
+
+            `
+        ).join("");
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur chargement demandes agent :",
+            error
+        );
+
+
+        liste.innerHTML = `
+            <p class="muted">
+                Erreur lors du chargement des demandes.
+            </p>
+        `;
+    }
+}
+
+async function chargerRendezVousAgent() {
+
+    const liste =
+        document.getElementById(
+            "agentAppointmentsList"
+        );
+
+    if (!liste) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL +
+            "/agent_rendezvous.php",
+            {
+                credentials: "include"
+            }
+        );
+
+        const data =
+            await response.json();
+
+        console.log(
+            "Rendez-vous agent :",
+            data
+        );
+
+        if (!data.success) {
+
+            liste.innerHTML = `
+                <p class="muted">
+                    ${escapeHTML(
+                        data.message ||
+                        "Impossible de récupérer les rendez-vous."
+                    )}
+                </p>
+            `;
+
+            return;
+        }
+
+        if (
+            !data.rendezvous ||
+            data.rendezvous.length === 0
+        ) {
+
+            liste.innerHTML = `
+                <div class="empty-state">
+
+                    <i class="fa-regular fa-calendar"></i>
+
+                    <p>
+                        Aucun rendez-vous pour votre service.
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+        liste.innerHTML =
+            data.rendezvous.map(
+                rendezvous => `
+
+                    <div class="request-card">
+
+                        <div>
+
+                            <h3>
+                                ${escapeHTML(
+                                    rendezvous.demarche
+                                )}
+                            </h3>
+
+                            <p class="muted">
+
+                                Rendez-vous
+                                #${rendezvous.id}
+
+                                <br>
+
+                                Citoyen :
+                                ${escapeHTML(
+                                    rendezvous.prenom
+                                )}
+                                ${escapeHTML(
+                                    rendezvous.nom
+                                )}
+
+                                <br>
+
+                                Email :
+                                ${escapeHTML(
+                                    rendezvous.email
+                                )}
+
+                                <br>
+
+                                Date :
+                                ${escapeHTML(
+                                    rendezvous.date_rendezvous
+                                )}
+
+                                <br>
+
+                                Heure :
+                                ${escapeHTML(
+                                    rendezvous.heure_rendezvous
+                                )}
+
+                                <br>
+
+                                Motif :
+                                ${escapeHTML(
+                                    rendezvous.motif
+                                )}
+
+                            </p>
+
+                        </div>
+
+                        <div>
+
+    <span class="status">
+
+        ${escapeHTML(
+            rendezvous.statut
+        )}
+
+    </span>
+
+    <br><br>
+
+    <button
+        class="btn"
+        onclick="voirRendezVousAgent(${rendezvous.id})"
+    >
+        <i class="fa-solid fa-eye"></i>
+        Voir les détails
+    </button>
+
+</div>
+
+                    </div>
+
+                `
+            ).join("");
+
+    } catch (error) {
+
+        console.error(
+            "Erreur chargement rendez-vous agent :",
+            error
+        );
+
+        liste.innerHTML = `
+            <p class="muted">
+                Erreur lors du chargement des rendez-vous.
+            </p>
+        `;
+    }
+}
+
+
+async function voirDemandeAgent(id) {
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/demande.php?id=" + id,
+            {
+                credentials: "include"
+            }
+        );
+
+        const data = await response.json();
+
+        console.log(
+            "Détails demande agent :",
+            data
+        );
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Impossible de récupérer la demande."
+            );
+
+            return;
+        }
+
+        const demande = data.demande;
+
+        const page = getPage();
+
+        if (!page) {
+            return;
+        }
+
+
+        // Transformer les étapes séparées par ; en liste
+        const etapes = demande.etapes
+            ? demande.etapes
+                .split(";")
+                .map(etape => etape.trim())
+                .filter(etape => etape !== "")
+            : [];
+
+
+        page.innerHTML = `
+
+            <div class="container">
+
+                <section class="page-header">
+
+                    <h1>
+                        Détail de la demande
+                    </h1>
+
+                    <p class="muted">
+                        Demande #${demande.id}
+                    </p>
+
+                </section>
+
+
+                <section class="card">
+
+                    <h2>
+                        ${escapeHTML(
+                            demande.demarche
+                        )}
+                    </h2>
+
+
+                    <p>
+                        <strong>Statut :</strong>
+                        ${escapeHTML(
+                            demande.statut
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Date de demande :</strong>
+                        ${escapeHTML(
+                            demande.date_demande
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Utilisateur :</strong>
+                        ${escapeHTML(
+                            demande.utilisateur_id
+                        )}
+                    </p>
+
+                </section>
+
+
+                <section class="card">
+
+                    <h2>
+                        Informations sur la démarche
+                    </h2>
+
+
+                    <p>
+                        <strong>Description :</strong>
+                    </p>
+
+                    <p>
+                        ${escapeHTML(
+                            demande.description || ""
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Service :</strong>
+                        ${escapeHTML(
+                            demande.service || ""
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Lieu :</strong>
+                        ${escapeHTML(
+                            demande.lieu || ""
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Délai :</strong>
+                        ${escapeHTML(
+                            demande.delai || ""
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>Frais :</strong>
+                        ${escapeHTML(
+                            demande.frais || ""
+                        )}
+                    </p>
+
+                </section>
+
+
+                <section class="card">
+
+                    <h2>
+                        Étapes de la démarche
+                    </h2>
+
+
+                    ${
+                        etapes.length > 0
+
+                        ? `
+                            <ol>
+
+                                ${etapes.map(
+                                    etape => `
+                                        <li>
+                                            ${escapeHTML(
+                                                etape
+                                            )}
+                                        </li>
+                                    `
+                                ).join("")}
+
+                            </ol>
+                        `
+
+                        : `
+                            <p class="muted">
+                                Aucune étape renseignée.
+                            </p>
+                        `
+                    }
+
+                </section>
+
+
+                <button
+                    class="btn"
+                    onclick="navigate('agent-space')"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Retour aux demandes
+                </button>
+
+            </div>
+
+        `;
+
+    } catch (error) {
+
+        console.error(
+            "Erreur détail demande agent :",
+            error
+        );
+
+        showToast(
+            "Erreur lors du chargement de la demande."
+        );
+    }
+}
 
 async function chargerStatistiquesAdmin() {
 
@@ -4527,10 +5775,7 @@ async function notificationsPage() {
         `;
     }
 }
-/* =========================================================
-   PROFIL
-========================================================= */
-
+/* =========================================================   PROFIL========================================================= */
 function profilePage() {
 
     if (!protect()) {
@@ -4540,6 +5785,13 @@ function profilePage() {
     const page = getPage();
 
     if (!page) {
+        return;
+    }
+
+    const utilisateur = utilisateurConnecte;
+
+    if (!utilisateur) {
+        showToast("Utilisateur non connecté.");
         return;
     }
 
@@ -4563,12 +5815,14 @@ function profilePage() {
 
 
                 <h2>
-                    Daniela
+                    ${escapeHTML(
+                        utilisateur.prenom + " " + utilisateur.nom
+                    )}
                 </h2>
 
 
                 <p class="muted">
-                    Utilisateur ADMIN'GUIDE
+                    ${escapeHTML(utilisateur.email)}
                 </p>
 
 
@@ -4586,13 +5840,15 @@ function profilePage() {
 
                 <button
                     class="btn btn-outline"
-                    onclick="showToast('Modification du profil à venir')"
+                    onclick="afficherModificationProfil()"
                 >
                     <i class="fa-solid fa-pen"></i>
                     Modifier mon profil
                 </button>
 
-                <br>
+
+                <br><br>
+
 
                 <button
                     class="btn"
@@ -4606,6 +5862,226 @@ function profilePage() {
 
         </div>
     `;
+}
+
+function afficherModificationProfil() {
+
+    if (!protect()) {
+        return;
+    }
+
+    const page = getPage();
+
+    if (!page || !utilisateurConnecte) {
+        return;
+    }
+
+    const utilisateur = utilisateurConnecte;
+
+    page.innerHTML = `
+        <div class="container">
+
+            <div class="eyebrow">
+                COMPTE
+            </div>
+
+            <h1>
+                Modifier mon profil
+            </h1>
+
+            <div class="card">
+
+                <div class="form-group">
+
+                    <label for="profilNom">
+                        Nom
+                    </label>
+
+                    <input
+                        type="text"
+                        id="profilNom"
+                        value="${escapeHTML(utilisateur.nom || "")}"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="profilPrenom">
+                        Prénom
+                    </label>
+
+                    <input
+                        type="text"
+                        id="profilPrenom"
+                        value="${escapeHTML(utilisateur.prenom || "")}"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="profilEmail">
+                        Email
+                    </label>
+
+                    <input
+                        type="email"
+                        id="profilEmail"
+                        value="${escapeHTML(utilisateur.email || "")}"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="profilTelephone">
+                        Téléphone
+                    </label>
+
+                    <input
+                        type="text"
+                        id="profilTelephone"
+                        value="${escapeHTML(utilisateur.telephone || "")}"
+                    >
+
+                </div>
+
+
+                <div style="margin-top: 20px;">
+
+                    <button
+                        class="btn"
+                        onclick="enregistrerProfil()"
+                    >
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Enregistrer
+                    </button>
+
+
+                    <button
+                        class="btn btn-outline"
+                        onclick="profilePage()"
+                    >
+                        Annuler
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+    `;
+}
+
+async function enregistrerProfil() {
+
+    if (!utilisateurConnecte) {
+        showToast("Utilisateur non connecté.");
+        return;
+    }
+
+    const nom =
+        document.getElementById("profilNom").value.trim();
+
+    const prenom =
+        document.getElementById("profilPrenom").value.trim();
+
+    const email =
+        document.getElementById("profilEmail").value.trim();
+
+    const telephone =
+        document.getElementById("profilTelephone").value.trim();
+
+
+    if (
+        nom === "" ||
+        prenom === "" ||
+        email === "" ||
+        telephone === ""
+    ) {
+        showToast("Veuillez remplir tous les champs.");
+        return;
+    }
+
+
+    const formData = new FormData();
+
+    formData.append("nom", nom);
+    formData.append("prenom", prenom);
+    formData.append("email", email);
+    formData.append("telephone", telephone);
+
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/modifier_profil.php",
+            {
+                method: "POST",
+                body: formData,
+                credentials: "same-origin"
+            }
+        );
+
+
+        const data = await response.json();
+
+        console.log(
+            "Réponse modification profil :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Impossible de modifier le profil."
+            );
+
+            return;
+        }
+
+
+        // Mettre à jour les données locales
+        utilisateurConnecte.nom = nom;
+        utilisateurConnecte.prenom = prenom;
+        utilisateurConnecte.email = email;
+        utilisateurConnecte.telephone = telephone;
+
+
+        // Actualiser le nom dans la navbar
+        updateHeader();
+
+
+        showToast(
+            "Profil modifié avec succès."
+        );
+
+
+        // Retourner à la page profil
+        setTimeout(function () {
+
+            profilePage();
+
+        }, 500);
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur modification profil :",
+            error
+        );
+
+        showToast(
+            "Impossible de contacter le serveur."
+        );
+    }
 }
 
 
@@ -5399,6 +6875,10 @@ function renderPage(route) {
             homePage();
             break;
 
+        case "agent-space":
+            agentSpacePage();
+            break;
+
         case "services":
             servicesPage();
             break;
@@ -5739,6 +7219,7 @@ async function chargerUtilisateursAdmin() {
                             <th>Email</th>
                             <th>Téléphone</th>
                             <th>Rôle</th>
+                            <th>Service</th>
                             <th>Date de création</th>
                             <th>Action</th>
                         </tr>
@@ -5748,6 +7229,62 @@ async function chargerUtilisateursAdmin() {
         `;
 
         data.utilisateurs.forEach(function(utilisateur) {
+
+            let serviceHTML = "Aucun service";
+
+if (
+    utilisateur.role === "agent" ||
+    utilisateur.role === "responsable"
+) {
+
+    serviceHTML = `
+        <select
+            onchange="modifierRoleUtilisateur(
+                ${utilisateur.id},
+                '${utilisateur.role}',
+                this.value
+            )"
+        >
+
+            <option value=""
+                ${utilisateur.service_id == null ? "selected" : ""}>
+                Aucun service
+            </option>
+
+            <option value="1"
+                ${utilisateur.service_id == 1 ? "selected" : ""}>
+                État civil
+            </option>
+
+            <option value="2"
+                ${utilisateur.service_id == 2 ? "selected" : ""}>
+                Fiscalité
+            </option>
+
+            <option value="3"
+                ${utilisateur.service_id == 3 ? "selected" : ""}>
+                Foncier
+            </option>
+
+            <option value="4"
+                ${utilisateur.service_id == 4 ? "selected" : ""}>
+                Entreprise
+            </option>
+
+            <option value="5"
+                ${utilisateur.service_id == 5 ? "selected" : ""}>
+                Social
+            </option>
+
+            <option value="6"
+                ${utilisateur.service_id == 6 ? "selected" : ""}>
+                Transport
+            </option>
+
+        </select>
+    `;
+}
+            
 
             html += `
                 <tr>
@@ -5764,44 +7301,50 @@ async function chargerUtilisateursAdmin() {
 
                     <td>
 
-    <select
-        onchange="modifierRoleUtilisateur(${utilisateur.id}, this.value)"
-    >
+                        <select
+                            onchange="modifierRoleUtilisateur(${utilisateur.id}, this.value)"
+                        >
 
-        <option value="user"
-            ${utilisateur.role === "user" ? "selected" : ""}>
-            Ancien rôle
-        </option>
+                            <option value="user"
+                                ${utilisateur.role === "user" ? "selected" : ""}>
+                                Ancien rôle
+                            </option>
 
-        <option value="citoyen"
-            ${utilisateur.role === "citoyen" ? "selected" : ""}>
-            Citoyen
-        </option>
+                            <option value="citoyen"
+                                ${utilisateur.role === "citoyen" ? "selected" : ""}>
+                                Citoyen
+                            </option>
 
-        <option value="agent"
-            ${utilisateur.role === "agent" ? "selected" : ""}>
-            Agent
-        </option>
+                            <option value="agent"
+                                ${utilisateur.role === "agent" ? "selected" : ""}>
+                                Agent
+                            </option>
 
-        <option value="responsable"
-            ${utilisateur.role === "responsable" ? "selected" : ""}>
-            Responsable
-        </option>
+                            <option value="responsable"
+                                ${utilisateur.role === "responsable" ? "selected" : ""}>
+                                Responsable
+                            </option>
 
-        <option value="admin"
-            ${utilisateur.role === "admin" ? "selected" : ""}>
-            Administrateur
-        </option>
+                            <option value="admin"
+                                ${utilisateur.role === "admin" ? "selected" : ""}>
+                                Administrateur
+                            </option>
 
-    </select>
+                        </select>
 
-</td>
+                    </td>
 
-<td>${utilisateur.date_creation}</td>
+                    <td>
+                        ${serviceHTML}
+                    </td>
 
-<td>
-    Modification du rôle
-</td>
+                    <td>
+                        ${utilisateur.date_creation}
+                    </td>
+
+                    <td>
+                        Modification du rôle
+                    </td>
 
                 </tr>
             `;
@@ -5833,12 +7376,23 @@ async function chargerUtilisateursAdmin() {
     }
 }
 
-async function modifierRoleUtilisateur(id, role) {
+async function modifierRoleUtilisateur(id, role, serviceId = null) {
     try {
         const formData = new FormData();
 
         formData.append("id", id);
         formData.append("role", role);
+
+        if (role === "agent" || role === "responsable") {
+
+    if (serviceId !== null && serviceId !== "") {
+        formData.append("service_id", serviceId);
+    }
+
+} else {
+
+    formData.append("service_id", "");
+}
 
         const response = await fetch(
             API_BASE_URL + "/admin_utilisateurs.php",
@@ -5851,7 +7405,7 @@ async function modifierRoleUtilisateur(id, role) {
 
         const data = await response.json();
 
-        console.log("Réponse modification rôle :", data);
+        console.log("Réponse modification utilisateur :", data);
 
         if (!data.success) {
             showToast(

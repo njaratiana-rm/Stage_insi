@@ -1,0 +1,3 @@
+<?php
+
+define("GEMINI_API_KEY", "VOTRE_CLE_GEMINI_ICI");

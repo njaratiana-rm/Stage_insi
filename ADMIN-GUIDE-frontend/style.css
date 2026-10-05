@@ -786,3 +786,61 @@ h3 i {
     }
 
 }
+
+/* ================================
+   SELECT STATUT RENDEZ-VOUS ADMIN
+================================ */
+
+.admin-rendezvous-status {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 9px 8px;
+    border: 1px solid #d9e4ef;
+    border-radius: 8px;
+    background: white;
+    color: #284b72;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+}
+
+.admin-rendezvous-status:focus {
+    border-color: #1474ed;
+    box-shadow: 0 0 0 3px #1474ed12;
+}
+
+/* ================================
+   SELECT STATUT DEMANDE ADMIN
+================================ */
+
+.admin-demande-status {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 9px 8px;
+    border: 1px solid #d9e4ef;
+    border-radius: 8px;
+    background: white;
+    color: #284b72;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+}
+
+.admin-demande-status:focus {
+    border-color: #1474ed;
+    box-shadow: 0 0 0 3px #1474ed12;
+}
+
+.profile-role {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 10px 0 0;
+    padding: 7px 12px;
+    border-radius: 20px;
+    background: #e8f3ff;
+    color: #1762b2;
+    font-size: 13px;
+}

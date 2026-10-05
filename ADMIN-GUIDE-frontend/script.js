@@ -740,19 +740,9 @@ function renderLogin() {
 
     page.innerHTML = `
         <div class="container">
-
-            <div class="card auth-card">
-
-                <div class="eyebrow">
-                    CONNEXION
-                </div>
-
                 <h1>
                     Se connecter
                 </h1>
-
-                <p class="muted">
-                    Connectez-vous à votre compte ADMIN'GUIDE.
                 </p>
 
 
@@ -4878,13 +4868,13 @@ async function adminRequestsPage() {
                     <div>
 
     <strong>Statut :</strong>
-
-    <select
-        onchange="modifierStatutDemande(
-            ${Number(demande.id)},
-            this.value
-        )"
-    >
+<select
+    class="admin-demande-status"
+    onchange="modifierStatutDemande(
+        ${Number(demande.id)},
+        this.value
+    )"
+>
 
         <option
             value="En attente"
@@ -5073,6 +5063,12 @@ async function adminAppointmentsPage() {
             "Rendez-vous administrateur :",
             data
         );
+    data.rendezvous.sort(function (a, b) {
+    const dateA = new Date(a.created_at);
+    const dateB = new Date(b.created_at);
+
+    return dateB - dateA;
+});
 
 
         if (!data.success) {
@@ -5176,52 +5172,46 @@ async function adminAppointmentsPage() {
                 )}
                         </p>
 
+                        <div class="status-field">
+    <label class="form-label">
+        Statut du rendez-vous
+    </label>
+<select
+    class="admin-rendezvous-status"
+    onchange="modifierStatutRendezvous(
+        ${Number(rendezvous.id)},
+        this.value
+    )"
+>
+        <option
+            value="En attente"
+            ${rendezvous.statut === "En attente" ? "selected" : ""}
+        >
+            En attente
+        </option>
 
-                        <div style="margin-top: 15px;">
+        <option
+            value="Confirmé"
+            ${rendezvous.statut === "Confirmé" ? "selected" : ""}
+        >
+            Confirmé
+        </option>
 
-                            <strong>Statut :</strong>
+        <option
+            value="Annulé"
+            ${rendezvous.statut === "Annulé" ? "selected" : ""}
+        >
+            Annulé
+        </option>
 
-                            <select
-                                onchange="modifierStatutRendezvous(
-                                    ${Number(rendezvous.id)},
-                                    this.value
-                                )"
-                            >
-
-                                <option
-                                    value="En attente"
-                                    ${rendezvous.statut === "En attente" ? "selected" : ""}
-                                >
-                                    En attente
-                                </option>
-
-
-                                <option
-                                    value="Confirmé"
-                                    ${rendezvous.statut === "Confirmé" ? "selected" : ""}
-                                >
-                                    Confirmé
-                                </option>
-
-
-                                <option
-                                    value="Annulé"
-                                    ${rendezvous.statut === "Annulé" ? "selected" : ""}
-                                >
-                                    Annulé
-                                </option>
-
-
-                                <option
-                                    value="Terminé"
-                                    ${rendezvous.statut === "Terminé" ? "selected" : ""}
-                                >
-                                    Terminé
-                                </option>
-
-                            </select>
-
-                        </div>
+        <option
+            value="Terminé"
+            ${rendezvous.statut === "Terminé" ? "selected" : ""}
+        >
+            Terminé
+        </option>
+    </select>
+</div>
 
 
                         <p class="muted" style="margin-top: 10px;">
@@ -6460,11 +6450,6 @@ function profilePage() {
 
     page.innerHTML = `
         <div class="container">
-
-            <div class="eyebrow">
-                COMPTE
-            </div>
-
             <h1>
                 Mon profil
             </h1>
@@ -6483,19 +6468,25 @@ function profilePage() {
     )}
                 </h2>
 
-
                 <p class="muted">
-                    ${escapeHTML(utilisateur.email)}
-                </p>
+    ${escapeHTML(utilisateur.email)}
+</p>
 
+<p class="profile-role">
+    <strong>Rôle :</strong>
+    ${escapeHTML(
+        utilisateur.role === "admin"
+            ? "Administrateur"
+            : utilisateur.role === "responsable"
+                ? "Responsable"
+                : utilisateur.role === "agent"
+                    ? "Agent"
+                    : "Citoyen"
+    )}
+</p>
 
-                <hr>
+<hr>
 
-
-                <div class="check">
-                    <i class="fa-solid fa-circle-check"></i>
-                    Profil actif
-                </div>
 
 
                 <br>
@@ -7027,7 +7018,6 @@ function renderAmbiguousResult(data) {
 /* =========================================================
    RECHERCHE ASSISTANT
 ========================================================= */
-
 async function assistantSearch() {
 
     const input =
@@ -7036,25 +7026,22 @@ async function assistantSearch() {
     const result =
         document.getElementById("assistantResult");
 
-
     if (!input || !result) {
         return;
     }
-
 
     const message =
         input.value.trim();
 
     lastAssistantMessage = message;
-
     procedureOrigin = "assistant";
 
 
-    console.log(
-        "Message envoyé :",
-        message
-    );
-
+    /*
+    |--------------------------------------------------------------------------
+    | Vérifier le message
+    |--------------------------------------------------------------------------
+    */
 
     if (!message) {
 
@@ -7068,23 +7055,55 @@ async function assistantSearch() {
     }
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Message de chargement
+    |--------------------------------------------------------------------------
+    */
+
+    result.innerHTML = `
+        <div class="card">
+
+            <p>
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                Analyse de votre demande...
+            </p>
+
+        </div>
+    `;
+
+
     try {
 
-        const url =
-            API_BASE_URL +
-            "/orientation.php?message=" +
-            encodeURIComponent(message);
-
-
-        console.log(
-            "URL API Assistant :",
-            url
-        );
-
+        /*
+        |--------------------------------------------------------------------------
+        | Appel du nouvel assistant IA
+        |--------------------------------------------------------------------------
+        */
 
         const response =
-            await fetch(url);
+            await fetch(
+                API_BASE_URL + "/assistant.php",
+                {
+                    method: "POST",
 
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        message: message
+                    })
+                }
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Vérifier HTTP
+        |--------------------------------------------------------------------------
+        */
 
         if (!response.ok) {
 
@@ -7095,43 +7114,528 @@ async function assistantSearch() {
         }
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Lire JSON
+        |--------------------------------------------------------------------------
+        */
+
         const data =
             await response.json();
 
 
         console.log(
-            "Réponse Assistant :",
+            "Réponse Assistant IA :",
             data
         );
 
 
-        if (data.trouve === true) {
+        /*
+        |--------------------------------------------------------------------------
+        | Erreur backend
+        |--------------------------------------------------------------------------
+        */
+
+        if (data.success !== true) {
 
             result.innerHTML = `
                 <div class="card">
 
                     <h3>
-                        ${escapeHTML(data.demarche.nom)}
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        Assistant indisponible
                     </h3>
 
                     <p class="muted">
-                        ${escapeHTML(data.demarche.description || "")}
+                        ${escapeHTML(
+                            data.message ||
+                            "Impossible d'analyser votre demande."
+                        )}
                     </p>
 
+                </div>
+            `;
+
+            return;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Besoin de clarification
+        |--------------------------------------------------------------------------
+        */
+if (
+    data.clarification === true ||
+    data.trouve !== true
+) {
+
+    let choixHTML = "";
+
+    if (
+        Array.isArray(data.choix) &&
+        data.choix.length > 0
+    ) {
+
+        choixHTML = `
+            <div class="assistant-choices">
+
+                <h4>
+                    Choisissez la démarche qui correspond
+                    à votre besoin :
+                </h4>
+
+                <div class="assistant-choice-list">
+
+                    ${data.choix.map(function (choix) {
+
+                        return `
+                            <button
+                                type="button"
+                                class="btn"
+                                onclick="assistantChoice(${Number(choix.id)})"
+                            >
+
+                                <i class="fa-solid fa-arrow-right"></i>
+
+                                ${escapeHTML(
+                                    choix.nom
+                                )}
+
+                            </button>
+                        `;
+
+                    }).join("")}
+
+                </div>
+
+            </div>
+        `;
+    }
+
+    result.innerHTML = `
+        <div class="card">
+
+            <h3>
+                <i class="fa-solid fa-circle-question"></i>
+                Besoin de précision
+            </h3>
+
+            <p class="muted">
+                ${escapeHTML(
+                    data.message ||
+                    "Pouvez-vous préciser votre demande ?"
+                )}
+            </p>
+
+            ${choixHTML}
+
+        </div>
+    `;
+
+    return;
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Vérifier la démarche
+        |--------------------------------------------------------------------------
+        */
+
+        if (!data.demarche) {
+
+            result.innerHTML = `
+                <div class="card">
+
+                    <h3>
+                        <i class="fa-solid fa-circle-question"></i>
+                        Démarche introuvable
+                    </h3>
+
+                    <p class="muted">
+                        Nous n'avons pas pu déterminer
+                        la démarche correspondant à votre demande.
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+
+        const demarche =
+            data.demarche;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Documents
+        |--------------------------------------------------------------------------
+        */
+
+        let documentsHTML = `
+            <li>
+                Aucun document enregistré.
+            </li>
+        `;
+
+
+        if (
+            Array.isArray(data.documents) &&
+            data.documents.length > 0
+        ) {
+
+            documentsHTML =
+                data.documents
+                    .map(function (document) {
+
+                        const obligatoire =
+                            Number(
+                                document.obligatoire
+                            ) === 1;
+
+
+                        return `
+                            <li>
+
+                                ${escapeHTML(
+                                    document.nom_document
+                                )}
+
+                                ${
+                                    obligatoire
+
+                                    ?
+
+                                    `<small class="muted">
+                                        - Obligatoire
+                                    </small>`
+
+                                    :
+
+                                    `<small class="muted">
+                                        - Selon votre situation
+                                    </small>`
+                                }
+
+                            </li>
+                        `;
+
+                    })
+                    .join("");
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Afficher la démarche
+        |--------------------------------------------------------------------------
+        */
+
+        result.innerHTML = `
+
+            <div class="card">
+
+                <h3>
+                    ${escapeHTML(
+                        demarche.nom
+                    )}
+                </h3>
+
+
+                <p class="muted">
+
+                    ${escapeHTML(
+                        demarche.description || ""
+                    )}
+
+                </p>
+
+
+                ${
+                    demarche.service
+
+                    ?
+
+                    `
+                    <p>
+                        <strong>Service :</strong>
+                        ${escapeHTML(
+                            demarche.service
+                        )}
+                    </p>
+                    `
+
+                    :
+
+                    ""
+                }
+
+
+                ${
+                    demarche.lieu
+
+                    ?
+
+                    `
                     <p>
                         <strong>Lieu :</strong>
-                        ${escapeHTML(data.demarche.lieu || "À déterminer")}
+                        ${escapeHTML(
+                            demarche.lieu
+                        )}
                     </p>
+                    `
 
+                    :
+
+                    ""
+                }
+
+
+                ${
+                    demarche.delai
+
+                    ?
+
+                    `
                     <p>
                         <strong>Délai :</strong>
-                        ${escapeHTML(data.demarche.delai || "À déterminer")}
+                        ${escapeHTML(
+                            demarche.delai
+                        )}
                     </p>
+                    `
 
+                    :
+
+                    ""
+                }
+
+
+                ${
+                    demarche.frais
+
+                    ?
+
+                    `
                     <p>
                         <strong>Frais :</strong>
-                        ${escapeHTML(data.demarche.frais || "À déterminer")}
+                        ${escapeHTML(
+                            demarche.frais
+                        )}
                     </p>
+                    `
+
+                    :
+
+                    ""
+                }
+
+
+                <h4>
+                    Documents nécessaires
+                </h4>
+
+
+                <ul>
+
+                    ${documentsHTML}
+
+                </ul>
+
+
+                <br>
+
+
+                <button
+                    type="button"
+                    class="btn"
+                    onclick="assistantChoice(${Number(
+                        demarche.id
+                    )})"
+                >
+
+                    <i class="fa-solid fa-arrow-right"></i>
+
+                    Voir la procédure complète
+
+                </button>
+
+            </div>
+        `;
+
+} catch (error) {
+
+    console.error(
+        "Erreur Assistant IA :",
+        error
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fallback vers le moteur classique
+    |--------------------------------------------------------------------------
+    */
+
+    try {
+
+        console.log(
+            "Assistant IA indisponible.",
+            "Tentative avec orientation classique..."
+        );
+
+
+        const fallbackUrl =
+            API_BASE_URL +
+            "/orientation.php?message=" +
+            encodeURIComponent(message);
+
+
+        const fallbackResponse =
+            await fetch(fallbackUrl);
+
+
+        if (!fallbackResponse.ok) {
+
+            throw new Error(
+                "Erreur HTTP fallback : " +
+                fallbackResponse.status
+            );
+        }
+
+
+        const fallbackData =
+            await fallbackResponse.json();
+
+
+        console.log(
+            "Réponse fallback :",
+            fallbackData
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Même résultat qu'une recherche classique
+        |--------------------------------------------------------------------------
+        */
+
+        if (fallbackData.trouve === true) {
+
+            result.innerHTML = `
+
+                <div class="card">
+
+                    <p class="muted">
+
+                        <i class="fa-solid fa-circle-info"></i>
+
+                        L'assistant IA est temporairement
+                        indisponible. Votre demande a été
+                        traitée avec le système classique
+                        d'orientation.
+
+                    </p>
+
+
+                    <h3>
+                        ${escapeHTML(
+                            fallbackData.demarche.nom
+                        )}
+                    </h3>
+
+
+                    <p class="muted">
+
+                        ${escapeHTML(
+                            fallbackData.demarche.description || ""
+                        )}
+
+                    </p>
+
+
+                    ${
+                        fallbackData.demarche.service
+
+                        ?
+
+                        `
+                        <p>
+                            <strong>Service :</strong>
+                            ${escapeHTML(
+                                fallbackData.demarche.service
+                            )}
+                        </p>
+                        `
+
+                        :
+
+                        ""
+                    }
+
+
+                    ${
+                        fallbackData.demarche.lieu
+
+                        ?
+
+                        `
+                        <p>
+                            <strong>Lieu :</strong>
+                            ${escapeHTML(
+                                fallbackData.demarche.lieu
+                            )}
+                        </p>
+                        `
+
+                        :
+
+                        ""
+                    }
+
+
+                    ${
+                        fallbackData.demarche.delai
+
+                        ?
+
+                        `
+                        <p>
+                            <strong>Délai :</strong>
+                            ${escapeHTML(
+                                fallbackData.demarche.delai
+                            )}
+                        </p>
+                        `
+
+                        :
+
+                        ""
+                    }
+
+
+                    ${
+                        fallbackData.demarche.frais
+
+                        ?
+
+                        `
+                        <p>
+                            <strong>Frais :</strong>
+                            ${escapeHTML(
+                                fallbackData.demarche.frais
+                            )}
+                        </p>
+                        `
+
+                        :
+
+                        ""
+                    }
 
 
                     <h4>
@@ -7141,37 +7645,60 @@ async function assistantSearch() {
 
                     <ul>
 
-                        ${data.documents &&
-                    data.documents.length > 0
+                        ${
+                            Array.isArray(
+                                fallbackData.documents
+                            ) &&
+                            fallbackData.documents.length > 0
 
-                    ?
+                            ?
 
-                    data.documents.map(function (document) {
+                            fallbackData.documents
+                                .map(function (document) {
 
-                        const obligatoire =
-                            Number(document.obligatoire) === 1;
+                                    const obligatoire =
+                                        Number(
+                                            document.obligatoire
+                                        ) === 1;
 
-                        return `
-                                    <li>
-                                        ${escapeHTML(document.nom_document)}
 
-                                        ${obligatoire
-                                ? `<small class="muted"> - Obligatoire</small>`
-                                : `<small class="muted"> - Selon votre situation</small>`
-                            }
-                                    </li>
-                                `;
+                                    return `
+                                        <li>
 
-                    }).join("")
+                                            ${escapeHTML(
+                                                document.nom_document
+                                            )}
 
-                    :
+                                            ${
+                                                obligatoire
 
-                    `
+                                                ?
+
+                                                `<small class="muted">
+                                                    - Obligatoire
+                                                </small>`
+
+                                                :
+
+                                                `<small class="muted">
+                                                    - Selon votre situation
+                                                </small>`
+                                            }
+
+                                        </li>
+                                    `;
+
+                                })
+                                .join("")
+
+                            :
+
+                            `
                                 <li>
                                     Aucun document enregistré.
                                 </li>
                             `
-                }
+                        }
 
                     </ul>
 
@@ -7182,74 +7709,138 @@ async function assistantSearch() {
                     <button
                         type="button"
                         class="btn"
-                        onclick="assistantChoice(${Number(data.demarche.id)})"
+                        onclick="assistantChoice(${Number(
+                            fallbackData.demarche.id
+                        )})"
                     >
+
                         <i class="fa-solid fa-arrow-right"></i>
+
                         Voir la procédure complète
+
                     </button>
 
                 </div>
+
             `;
 
             return;
         }
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Fallback ambigu
+        |--------------------------------------------------------------------------
+        */
+
         if (
-            data.ambigu === true ||
+            fallbackData.ambigu === true ||
             (
-                Array.isArray(data.choix) &&
-                data.choix.length > 0
+                Array.isArray(fallbackData.choix) &&
+                fallbackData.choix.length > 0
             )
         ) {
 
-            result.innerHTML =
-                renderAmbiguousResult(data);
+            result.innerHTML = `
+
+                <div class="card">
+
+                    <p class="muted">
+
+                        <i class="fa-solid fa-circle-info"></i>
+
+                        L'assistant IA est temporairement
+                        indisponible. Nous utilisons le système
+                        classique d'orientation.
+
+                    </p>
+
+                    ${renderAmbiguousResult(
+                        fallbackData
+                    )}
+
+                </div>
+
+            `;
 
             return;
         }
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Aucun résultat
+        |--------------------------------------------------------------------------
+        */
+
         result.innerHTML = `
+
             <div class="card">
 
                 <h3>
+
                     <i class="fa-solid fa-circle-question"></i>
+
                     Besoin de précision
+
                 </h3>
 
+
                 <p class="muted">
-                    ${data.message || "Aucune démarche trouvée."}
+
+                    ${escapeHTML(
+                        fallbackData.message ||
+                        "Nous n'avons pas pu déterminer votre démarche."
+                    )}
+
                 </p>
 
-                ${renderSuggestions(data)}
+                ${renderSuggestions(
+                    fallbackData
+                )}
 
             </div>
+
         `;
 
 
-    } catch (error) {
+    } catch (fallbackError) {
 
         console.error(
-            "Erreur Assistant :",
-            error
-        );
-
-        console.error(
-            "Message exact :",
-            error.message
+            "Erreur du système classique :",
+            fallbackError
         );
 
 
         result.innerHTML = `
-            <p class="muted">
-                Impossible de contacter le serveur.
-            </p>
+
+            <div class="card">
+
+                <h3>
+
+                    <i class="fa-solid fa-circle-exclamation"></i>
+
+                    Assistant temporairement indisponible
+
+                </h3>
+
+
+                <p class="muted">
+
+                    Impossible de contacter le service
+                    d'orientation pour le moment.
+
+                </p>
+
+            </div>
+
         `;
     }
 }
 
-
+}
+        
 /* =========================================================
    CHOIX DE L'ASSISTANT
 ========================================================= */

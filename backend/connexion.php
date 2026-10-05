@@ -27,7 +27,7 @@ if ($email === "" || $mot_de_passe === "") {
 
 try {
 
-    $sql = "SELECT id, nom, prenom, email, mot_de_passe, role
+    $sql = "SELECT id, nom, prenom, email, mot_de_passe, role, email_verifie
         FROM utilisateurs
         WHERE email = :email
         LIMIT 1";
@@ -56,6 +56,14 @@ try {
         exit;
     }
 
+    if ((int)$utilisateur["email_verifie"] !== 1) {
+    echo json_encode([
+        "success" => false,
+        "message" => "Veuillez vérifier votre adresse email avant de vous connecter."
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
     session_regenerate_id(true);
 
 $_SESSION["user_id"] = $utilisateur["id"];
@@ -64,7 +72,9 @@ $_SESSION["prenom"] = $utilisateur["prenom"];
 $_SESSION["email"] = $utilisateur["email"];
 $_SESSION["role"] = $utilisateur["role"];
 
-    unset($utilisateur["mot_de_passe"]);
+unset($utilisateur["mot_de_passe"]);
+unset($utilisateur["email_verifie"]);  
+unset($utilisateur["mot_de_passe"]);
 
     echo json_encode([
         "success" => true,

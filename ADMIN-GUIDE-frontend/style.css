@@ -552,3 +552,237 @@ h3 i {
     border-top: 1px solid #ddd;
     margin: 6px 0;
 }
+
+.forgot-password-container {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.forgot-password-link {
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: 0.2s ease;
+}
+
+.forgot-password-link:hover {
+    text-decoration: underline;
+}
+
+#adminUsersContainer th,
+#adminUsersContainer td {
+    padding: 14px 9px;
+    text-align: left;
+    border-bottom: 1px solid #e7edf4;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+}
+
+#adminUsersContainer th {
+    color: #70839a;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    white-space: normal;
+}
+
+#adminUsersContainer td {
+    color: #284b72;
+    font-size: 14px;
+}
+
+#adminUsersContainer select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 9px 8px;
+    border: 1px solid #d9e4ef;
+    border-radius: 8px;
+    background: white;
+    color: #284b72;
+    font-size: 13px;
+    outline: none;
+}
+
+/* ================================
+   MODIFICATION DU PROFIL
+================================ */
+
+.profile-edit-page {
+    max-width: 1100px;
+}
+
+
+/* En-tête */
+
+.profile-edit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 28px;
+}
+
+.profile-edit-header h1 {
+    margin: 0 0 8px;
+}
+
+
+/* Carte principale */
+
+.profile-edit-card {
+    background: #ffffff;
+    border: 1px solid #e4ebf3;
+    border-radius: 18px;
+    box-shadow: 0 8px 25px #173f6708;
+    overflow: hidden;
+}
+
+
+/* En-tête de la carte */
+
+.profile-edit-card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 24px 28px;
+    border-bottom: 1px solid #e8eef5;
+}
+
+.profile-edit-card-header h2 {
+    margin: 0 0 5px;
+    font-size: 18px;
+    color: #12345b;
+}
+
+.profile-edit-card-header p {
+    margin: 0;
+    font-size: 13px;
+    color: #7a8da3;
+}
+
+
+/* Icône */
+
+.profile-edit-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef6ff;
+    color: #1474ed;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+
+/* Formulaire */
+
+.profile-edit-form {
+    padding: 28px;
+}
+
+.profile-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    margin-bottom: 20px;
+}
+
+
+/* Groupes */
+
+.profile-edit-form .form-group {
+    margin-bottom: 0;
+}
+
+.profile-edit-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #284b72;
+}
+
+
+/* Champs */
+
+.profile-edit-form input {
+    width: 100%;
+    height: 46px;
+    padding: 0 14px;
+    border: 1px solid #d9e4ef;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #173f67;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+}
+
+.profile-edit-form input:focus {
+    border-color: #1474ed;
+    box-shadow: 0 0 0 3px #1474ed12;
+}
+
+
+/* Information */
+
+.profile-edit-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 13px 15px;
+    border-radius: 10px;
+    background: #f6f9fd;
+    color: #6d8197;
+    font-size: 12px;
+}
+
+.profile-edit-info i {
+    color: #1474ed;
+    font-size: 14px;
+}
+
+
+/* Boutons */
+
+.profile-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px solid #e8eef5;
+}
+
+
+/* Responsive */
+
+@media (max-width: 700px) {
+
+    .profile-form-row {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .profile-edit-card-header {
+        padding: 20px;
+    }
+
+    .profile-edit-form {
+        padding: 20px;
+    }
+
+    .profile-edit-actions {
+        flex-direction: column-reverse;
+    }
+
+    .profile-edit-actions .btn {
+        width: 100%;
+    }
+
+}

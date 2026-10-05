@@ -412,10 +412,10 @@ async function verifierSession() {
             utilisateurConnecte =
                 data.utilisateur || null;
 
-                console.log(
-    "Utilisateur connecté :",
-    utilisateurConnecte
-);
+            console.log(
+                "Utilisateur connecté :",
+                utilisateurConnecte
+            );
             await chargerNotifications();
 
         } else {
@@ -526,22 +526,22 @@ function updateAdminNav() {
         document.getElementById("agentSpaceLink");
 
     const citizenRequestsLink =
-    document.getElementById("citizenRequestsLink");
+        document.getElementById("citizenRequestsLink");
 
-const citizenAppointmentsLink =
-    document.getElementById("citizenAppointmentsLink");
+    const citizenAppointmentsLink =
+        document.getElementById("citizenAppointmentsLink");
 
     if (
-    !dashboardLink ||
-    !link ||
-    !appointmentsLink ||
-    !usersLink ||
-    !agentSpaceLink ||
-    !citizenRequestsLink ||
-    !citizenAppointmentsLink
-) {
-    return;
-}
+        !dashboardLink ||
+        !link ||
+        !appointmentsLink ||
+        !usersLink ||
+        !agentSpaceLink ||
+        !citizenRequestsLink ||
+        !citizenAppointmentsLink
+    ) {
+        return;
+    }
 
 
     if (
@@ -601,20 +601,20 @@ const citizenAppointmentsLink =
         }
 
         // ==============================
-// FONCTIONS CITOYEN
-// Citoyen uniquement
-// ==============================
+        // FONCTIONS CITOYEN
+        // Citoyen uniquement
+        // ==============================
 
-if (utilisateurConnecte.role === "citoyen") {
+        if (utilisateurConnecte.role === "citoyen") {
 
-    citizenRequestsLink.style.display = "";
-    citizenAppointmentsLink.style.display = "";
+            citizenRequestsLink.style.display = "";
+            citizenAppointmentsLink.style.display = "";
 
-} else {
+        } else {
 
-    citizenRequestsLink.style.display = "none";
-    citizenAppointmentsLink.style.display = "none";
-}
+            citizenRequestsLink.style.display = "none";
+            citizenAppointmentsLink.style.display = "none";
+        }
 
 
     } else {
@@ -629,7 +629,7 @@ if (utilisateurConnecte.role === "citoyen") {
         usersLink.style.display = "none";
         agentSpaceLink.style.display = "none";
         citizenRequestsLink.style.display = "none";
-citizenAppointmentsLink.style.display = "none";
+        citizenAppointmentsLink.style.display = "none";
     }
 }
 
@@ -756,7 +756,7 @@ function renderLogin() {
                 </p>
 
 
-                <form onsubmit="login(event)" autocomplete="off">
+                <form onsubmit="login(event)" autocomplete="on">
 
                     <div class="field">
 
@@ -790,7 +790,17 @@ function renderLogin() {
                         >
 
                     </div>
-
+                    <div class="forgot-password-container">
+    <span
+        class="forgot-password-link"
+        onclick="afficherMotDePasseOublie()"
+        role="button"
+        tabindex="0"
+        onkeydown="if(event.key === 'Enter' || event.key === ' ') afficherMotDePasseOublie()"
+    >
+        Mot de passe oublié ?
+    </span>
+</div>
 
                     <button
                         type="submit"
@@ -842,6 +852,341 @@ function renderLogin() {
     }
 }
 
+function afficherMotDePasseOublie() {
+
+    const page = getPage();
+
+    if (!page) {
+        return;
+    }
+
+    page.innerHTML = `
+        <div class="container">
+
+            <div class="card auth-card">
+
+                <div class="eyebrow">
+                    RÉCUPÉRATION
+                </div>
+
+                <h1>
+                    Mot de passe oublié
+                </h1>
+
+                <p class="muted">
+                    Entrez votre adresse email pour recevoir
+                    un lien de réinitialisation.
+                </p>
+
+                <form onsubmit="demanderReinitialisation(event)">
+
+                    <div class="field">
+
+                        <label for="resetEmail">
+                            Adresse email
+                        </label>
+
+                        <input
+                            id="resetEmail"
+                            type="email"
+                            placeholder="exemple@email.com"
+                            required
+                        >
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="btn"
+                    >
+                        <i class="fa-solid fa-envelope"></i>
+                        Envoyer le lien
+                    </button>
+
+                </form>
+
+                <hr>
+
+                <button
+                    type="button"
+                    class="btn btn-outline"
+                    onclick="renderLogin()"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Retour à la connexion
+                </button>
+
+            </div>
+
+        </div>
+    `;
+}
+
+async function demanderReinitialisation(event) {
+
+    event.preventDefault();
+
+    const email =
+        document.getElementById("resetEmail").value.trim();
+
+    if (email === "") {
+        showToast("Veuillez saisir votre adresse email.");
+        return;
+    }
+
+    const formData = new FormData();
+
+    formData.append("email", email);
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/mot_de_passe_oublie.php",
+            {
+                method: "POST",
+                body: formData,
+                credentials: "same-origin"
+            }
+        );
+
+        const data = await response.json();
+
+        console.log(
+            "Réponse récupération mot de passe :",
+            data
+        );
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Impossible d'envoyer le lien."
+            );
+
+            return;
+        }
+
+        showToast(
+            "Un email de réinitialisation vous a été envoyé."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Erreur récupération mot de passe :",
+            error
+        );
+
+        showToast(
+            "Impossible de contacter le serveur."
+        );
+    }
+}
+
+function afficherReinitialisationMotDePasse(token) {
+
+    const page = getPage();
+
+    if (!page) {
+        return;
+    }
+
+    page.innerHTML = `
+        <div class="container">
+
+            <div class="card auth-card">
+
+                <div class="eyebrow">
+                    SÉCURITÉ
+                </div>
+
+                <h1>
+                    Réinitialiser mon mot de passe
+                </h1>
+
+                <p class="muted">
+                    Choisissez un nouveau mot de passe pour votre compte.
+                </p>
+
+                <form onsubmit="changerMotDePasse(event)">
+
+                    <div class="field">
+
+                        <label for="nouveauMotDePasse">
+                            Nouveau mot de passe
+                        </label>
+
+                        <input
+                            id="nouveauMotDePasse"
+                            type="password"
+                            placeholder="Nouveau mot de passe"
+                            minlength="6"
+                            required
+                        >
+
+                    </div>
+
+                    <div class="field">
+
+                        <label for="confirmationMotDePasse">
+                            Confirmer le mot de passe
+                        </label>
+
+                        <input
+                            id="confirmationMotDePasse"
+                            type="password"
+                            placeholder="Confirmer le mot de passe"
+                            minlength="6"
+                            required
+                        >
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="btn"
+                    >
+                        <i class="fa-solid fa-key"></i>
+                        Réinitialiser le mot de passe
+                    </button>
+
+                </form>
+
+                <hr>
+
+                <button
+                    type="button"
+                    class="btn btn-outline"
+                    onclick="renderLogin()"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Retour à la connexion
+                </button>
+
+            </div>
+
+        </div>
+    `;
+
+    window.resetToken = token;
+}
+
+async function changerMotDePasse(event) {
+
+    event.preventDefault();
+
+    const nouveauMotDePasse =
+        document.getElementById(
+            "nouveauMotDePasse"
+        ).value;
+
+    const confirmationMotDePasse =
+        document.getElementById(
+            "confirmationMotDePasse"
+        ).value;
+
+    if (
+        nouveauMotDePasse === "" ||
+        confirmationMotDePasse === ""
+    ) {
+        showToast(
+            "Veuillez remplir tous les champs."
+        );
+        return;
+    }
+
+    if (nouveauMotDePasse.length < 6) {
+        showToast(
+            "Le mot de passe doit contenir au moins 6 caractères."
+        );
+        return;
+    }
+
+    if (
+        nouveauMotDePasse !==
+        confirmationMotDePasse
+    ) {
+        showToast(
+            "Les mots de passe ne correspondent pas."
+        );
+        return;
+    }
+
+    const formData = new FormData();
+
+    formData.append(
+        "token",
+        window.resetToken
+    );
+
+    formData.append(
+        "nouveau_mot_de_passe",
+        nouveauMotDePasse
+    );
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL +
+            "/changer_mot_de_passe.php",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+        const data =
+            await response.json();
+
+        console.log(
+            "Réponse changement mot de passe :",
+            data
+        );
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Impossible de réinitialiser le mot de passe."
+            );
+
+            return;
+        }
+
+        showToast(
+            "Mot de passe réinitialisé avec succès."
+        );
+
+        window.resetToken = null;
+
+        setTimeout(function () {
+
+            window.location.hash =
+                "#login";
+
+            window.history.replaceState(
+                null,
+                "",
+                window.location.pathname +
+                window.location.hash
+            );
+
+            renderPage("login");
+
+        }, 700);
+
+    } catch (error) {
+
+        console.error(
+            "Erreur changement mot de passe :",
+            error
+        );
+
+        showToast(
+            "Impossible de contacter le serveur."
+        );
+    }
+}
 
 function renderRegister() {
 
@@ -869,114 +1214,129 @@ function renderRegister() {
                     d'ADMIN'GUIDE.
                 </p>
 
-
                 <form onsubmit="register(event)" autocomplete="off">
 
-                    <div class="field">
+    <div class="field">
 
-                        <label for="regNom">
-                            Nom
-                        </label>
+        <label for="regNom">
+            Nom
+        </label>
 
-                        <input
-                            id="regNom"
-                            type="text"
-                            placeholder="Votre nom"
-                            required
-                        >
+        <input
+            id="regNom"
+            name="nom"
+            type="text"
+            placeholder="Votre nom"
+            autocomplete="family-name"
+            required
+        >
 
-                    </div>
-
-
-                    <div class="field">
-
-                        <label for="regPrenom">
-                            Prénom
-                        </label>
-
-                        <input
-                            id="regPrenom"
-                            type="text"
-                            placeholder="Votre prénom"
-                            required
-                        >
-
-                    </div>
+    </div>
 
 
-                    <div class="field">
+    <div class="field">
 
-                        <label for="regEmail">
-                            Adresse email
-                        </label>
+        <label for="regPrenom">
+            Prénom
+        </label>
 
-                        <input
-                            id="regEmail"
-                            type="email"
-                            placeholder="exemple@email.com"
-                            required
-                        >
+        <input
+            id="regPrenom"
+            name="prenom"
+            type="text"
+            placeholder="Votre prénom"
+            autocomplete="given-name"
+            required
+        >
 
-                    </div>
-
-
-                    <div class="field">
-
-                        <label for="regPhone">
-                            Téléphone
-                        </label>
-
-                        <input
-                            id="regPhone"
-                            type="tel"
-                            placeholder="Votre numéro de téléphone"
-                            required
-                        >
-
-                    </div>
+    </div>
 
 
-                    <div class="field">
-
-                        <label for="regPassword">
-                            Mot de passe
-                        </label>
-
-                        <input
-                            id="regPassword"
-                            type="password"
-                            placeholder="Votre mot de passe"
-                            required
-                        >
-
-                    </div>
+        <div class="field">
 
 
-                    <div class="field">
-
-                        <label for="regConfirm">
-                            Confirmer le mot de passe
-                        </label>
-
-                        <input
-                            id="regConfirm"
-                            type="password"
-                            placeholder="Confirmez votre mot de passe"
-                            required
-                        >
-
-                    </div>
+        <label for="regPhone">
+            Téléphone
+        </label>
 
 
-                    <button
-                        type="submit"
-                        class="btn"
-                    >
-                        <i class="fa-solid fa-user-plus"></i>
-                        Créer mon compte
-                    </button>
+        <input
+            id="regPhone"
+            name="telephone"
+            type="tel"
+            placeholder="Votre numéro de téléphone"
+            autocomplete="off"
+            required
+        >
 
-                </form>
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="regEmail">
+            Adresse email
+        </label>
+
+        <input
+            id="regEmail"
+            name="email"
+            type="email"
+            placeholder="exemple@email.com"
+            autocomplete="email
+            required
+        >
+
+    </div>
+
+
+
+    <div class="field">
+
+        <label for="regPassword">
+            Mot de passe
+        </label>
+
+        <input
+            id="regPassword"
+            name="mot_de_passe"
+            type="password"
+            placeholder="Votre mot de passe"
+            autocomplete="new-password"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="regConfirm">
+            Confirmer le mot de passe
+        </label>
+
+        <input
+            id="regConfirm"
+            name="confirmation"
+            type="password"
+            placeholder="Confirmez votre mot de passe"
+            autocomplete="new-password"
+            required
+        >
+
+    </div>
+
+
+    <button
+        type="submit"
+        class="btn"
+    >
+        <i class="fa-solid fa-user-plus"></i>
+        Créer mon compte
+    </button>
+
+</form>
 
 
                 <hr>
@@ -1082,7 +1442,7 @@ async function register(event) {
     try {
 
         console.log("URL inscription :", API_BASE_URL + "/inscription.php");
-console.log("Données inscription :", donnees.toString());
+        console.log("Données inscription :", donnees.toString());
 
         const response =
             await fetch(
@@ -1120,7 +1480,7 @@ console.log("Données inscription :", donnees.toString());
 
 
         showToast(
-            "Inscription réussie ✓"
+            "Inscription réussie.Un email de vérification vient d'être envoyé.Vérifiez votre boîte mail avant de vous connecter."
         );
 
 
@@ -1201,6 +1561,20 @@ async function login(event) {
 
         if (!data.success) {
 
+            if (
+                data.message ===
+                "Veuillez vérifier votre adresse email avant de vous connecter."
+            ) {
+
+                showToast(
+                    "Votre adresse email n'est pas encore vérifiée."
+                );
+
+                afficherVerificationEmail(email);
+
+                return;
+            }
+
             showToast(
                 data.message ||
                 "Email ou mot de passe incorrect."
@@ -1208,6 +1582,124 @@ async function login(event) {
 
             return;
         }
+
+        if (!data.success) {
+
+            if (
+                data.message ===
+                "Veuillez vérifier votre adresse email avant de vous connecter."
+            ) {
+
+                showToast(
+                    "Votre adresse email n'est pas encore vérifiée."
+                );
+
+                afficherVerificationEmail(email);
+
+                return;
+            }
+
+            showToast(
+                data.message ||
+                "Email ou mot de passe incorrect."
+            );
+
+            return;
+        }
+        if (!data.success) {
+
+            if (
+                data.message ===
+                "Veuillez vérifier votre adresse email avant de vous connecter."
+            ) {
+
+                showToast(
+                    "Votre adresse email n'est pas encore vérifiée."
+                );
+
+                afficherVerificationEmail(email);
+
+                return;
+            }
+
+            showToast(
+                data.message ||
+                "Email ou mot de passe incorrect."
+            );
+
+            return;
+        }
+        if (!data.success) {
+
+            if (
+                data.message ===
+                "Veuillez vérifier votre adresse email avant de vous connecter."
+            ) {
+
+                showToast(
+                    "Votre adresse email n'est pas encore vérifiée."
+                );
+
+                afficherVerificationEmail(email);
+
+                return;
+            }
+
+            showToast(
+                data.message ||
+                "Email ou mot de passe incorrect."
+            );
+
+            return;
+        }
+        if (!data.success) {
+
+            if (
+                data.message ===
+                "Veuillez vérifier votre adresse email avant de vous connecter."
+            ) {
+
+                showToast(
+                    "Votre adresse email n'est pas encore vérifiée."
+                );
+
+                afficherVerificationEmail(email);
+
+                return;
+            }
+
+            showToast(
+                data.message ||
+                "Email ou mot de passe incorrect."
+            );
+
+            return;
+        }
+
+        if (!data.success) {
+
+            if (
+                data.message ===
+                "Veuillez vérifier votre adresse email avant de vous connecter."
+            ) {
+
+                showToast(
+                    "Votre adresse email n'est pas encore vérifiée."
+                );
+
+                afficherVerificationEmail(email);
+
+                return;
+            }
+
+            showToast(
+                data.message ||
+                "Email ou mot de passe incorrect."
+            );
+
+            return;
+        }
+
 
         await verifierSession();
 
@@ -1217,21 +1709,21 @@ async function login(event) {
 
         setTimeout(function () {
 
-    if (
-        utilisateurConnecte &&
-        utilisateurConnecte.role === "admin" ||
-        utilisateurConnecte.role === "responsable"
-    ) {
+            if (
+                utilisateurConnecte &&
+                utilisateurConnecte.role === "admin" ||
+                utilisateurConnecte.role === "responsable"
+            ) {
 
-        navigate("admin-dashboard");
+                navigate("admin-dashboard");
 
-    } else {
+            } else {
 
-        navigate("home");
-    }
+                navigate("home");
+            }
 
-}, 700);
-        
+        }, 700);
+
 
 
     } catch (error) {
@@ -1241,6 +1733,186 @@ async function login(event) {
             error
         );
 
+
+        showToast(
+            "Impossible de contacter le serveur."
+        );
+    }
+}
+
+function afficherVerificationEmail(email) {
+
+    const page = getPage();
+
+    if (!page) {
+        return;
+    }
+
+    page.innerHTML = `
+        <div class="container">
+
+            <div class="card auth-card">
+
+                <div class="eyebrow">
+                    VÉRIFICATION
+                </div>
+
+                <h1>
+                    Adresse email non vérifiée
+                </h1>
+
+                <p class="muted">
+                    Votre adresse email n'est pas encore vérifiée.
+                    Vous devez vérifier votre adresse avant de vous connecter.
+                </p>
+
+                <button
+                    type="button"
+                    class="btn"
+                    onclick="renvoyerEmailVerification('${email}')"
+                >
+                    <i class="fa-solid fa-envelope"></i>
+                    Renvoyer l'email de vérification
+                </button>
+
+                <br>
+
+                <button
+                    type="button"
+                    class="btn btn-outline"
+                    onclick="renderLogin()"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Retour à la connexion
+                </button>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+async function renvoyerEmailVerification(email) {
+
+    if (!email) {
+        showToast(
+            "Adresse email manquante."
+        );
+        return;
+    }
+
+    const formData =
+        new FormData();
+
+    formData.append(
+        "email",
+        email
+    );
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL +
+                "/renvoyer_verification.php",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+        const data =
+            await response.json();
+
+        console.log(
+            "Réponse renvoi vérification :",
+            data
+        );
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Impossible d'envoyer l'email."
+            );
+
+            return;
+        }
+
+        showToast(
+            "Un nouvel email de vérification a été envoyé."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Erreur renvoi vérification :",
+            error
+        );
+
+        showToast(
+            "Impossible de contacter le serveur."
+        );
+    }
+}
+
+
+async function renvoyerEmailVerification(email) {
+
+    console.log(
+        "Renvoi de vérification pour :",
+        email
+    );
+
+    const formData =
+        new FormData();
+
+    formData.append(
+        "email",
+        email
+    );
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL +
+                "/renvoyer_verification.php",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+        const data =
+            await response.json();
+
+        console.log(
+            "Réponse renvoi vérification :",
+            data
+        );
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Impossible d'envoyer l'email."
+            );
+
+            return;
+        }
+
+        showToast(
+            "Un nouvel email de vérification a été envoyé."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Erreur renvoi vérification :",
+            error
+        );
 
         showToast(
             "Impossible de contacter le serveur."
@@ -1451,7 +2123,7 @@ function homePage() {
 
                     ${services.map(function (service) {
 
-                        return `
+        return `
                             <div
                                 class="card service-card"
                                 onclick="serviceDetail('${service.id}')"
@@ -1477,7 +2149,7 @@ function homePage() {
                             </div>
                         `;
 
-                    }).join("")}
+    }).join("")}
 
                 </div>
 
@@ -1744,11 +2416,11 @@ function agentSpacePage() {
 
                     <strong>
                         ${escapeHTML(
-                            utilisateurConnecte?.prenom || ""
-                        )}
+        utilisateurConnecte?.prenom || ""
+    )}
                         ${escapeHTML(
-                            utilisateurConnecte?.nom || ""
-                        )}
+        utilisateurConnecte?.nom || ""
+    )}
                     </strong>
 
                 </div>
@@ -1863,9 +2535,9 @@ async function chargerRendezVousAgent() {
             liste.innerHTML = `
                 <p class="muted">
                     ${escapeHTML(
-                        data.message ||
-                        "Impossible de récupérer les rendez-vous."
-                    )}
+                data.message ||
+                "Impossible de récupérer les rendez-vous."
+            )}
                 </p>
             `;
 
@@ -1902,8 +2574,8 @@ async function chargerRendezVousAgent() {
 
                             <h3>
                                 ${escapeHTML(
-                                    rendezvous.demarche
-                                )}
+                    rendezvous.demarche
+                )}
                             </h3>
 
                             <p class="muted">
@@ -1915,39 +2587,39 @@ async function chargerRendezVousAgent() {
 
                                 Citoyen :
                                 ${escapeHTML(
-                                    rendezvous.prenom
-                                )}
+                    rendezvous.prenom
+                )}
                                 ${escapeHTML(
-                                    rendezvous.nom
-                                )}
+                    rendezvous.nom
+                )}
 
                                 <br>
 
                                 Email :
                                 ${escapeHTML(
-                                    rendezvous.email
-                                )}
+                    rendezvous.email
+                )}
 
                                 <br>
 
                                 Date :
                                 ${escapeHTML(
-                                    rendezvous.date_rendezvous
-                                )}
+                    rendezvous.date_rendezvous
+                )}
 
                                 <br>
 
                                 Heure :
                                 ${escapeHTML(
-                                    rendezvous.heure_rendezvous
-                                )}
+                    rendezvous.heure_rendezvous
+                )}
 
                                 <br>
 
                                 Motif :
                                 ${escapeHTML(
-                                    rendezvous.motif
-                                )}
+                    rendezvous.motif
+                )}
 
                             </p>
 
@@ -1958,8 +2630,8 @@ async function chargerRendezVousAgent() {
                             <span class="status">
 
                                 ${escapeHTML(
-                                    rendezvous.statut
-                                )}
+                    rendezvous.statut
+                )}
 
                             </span>
 
@@ -2051,8 +2723,8 @@ async function voirRendezVousAgent(id) {
 
                     <h2>
                         ${escapeHTML(
-                            rendezvous.demarche
-                        )}
+            rendezvous.demarche
+        )}
                     </h2>
 
                         <p>
@@ -2096,24 +2768,24 @@ async function voirRendezVousAgent(id) {
                     <p>
                         <strong>Date :</strong>
                         ${escapeHTML(
-                            rendezvous.date_rendezvous
-                        )}
+            rendezvous.date_rendezvous
+        )}
                     </p>
 
 
                     <p>
                         <strong>Heure :</strong>
                         ${escapeHTML(
-                            rendezvous.heure_rendezvous
-                        )}
+            rendezvous.heure_rendezvous
+        )}
                     </p>
 
 
                     <p>
                         <strong>Motif :</strong>
                         ${escapeHTML(
-                            rendezvous.motif
-                        )}
+            rendezvous.motif
+        )}
                     </p>
 
                 </section>
@@ -2129,32 +2801,32 @@ async function voirRendezVousAgent(id) {
                     <p>
                         <strong>Nom :</strong>
                         ${escapeHTML(
-                            rendezvous.nom
-                        )}
+            rendezvous.nom
+        )}
                     </p>
 
 
                     <p>
                         <strong>Prénom :</strong>
                         ${escapeHTML(
-                            rendezvous.prenom
-                        )}
+            rendezvous.prenom
+        )}
                     </p>
 
 
                     <p>
                         <strong>Email :</strong>
                         ${escapeHTML(
-                            rendezvous.email
-                        )}
+            rendezvous.email
+        )}
                     </p>
 
 
                     <p>
                         <strong>Téléphone :</strong>
                         ${escapeHTML(
-                            rendezvous.telephone
-                        )}
+            rendezvous.telephone
+        )}
                     </p>
 
                 </section>
@@ -2288,9 +2960,9 @@ async function chargerDemandesAgent() {
             liste.innerHTML = `
                 <p class="muted">
                     ${escapeHTML(
-                        data.message ||
-                        "Impossible de récupérer les demandes."
-                    )}
+                data.message ||
+                "Impossible de récupérer les demandes."
+            )}
                 </p>
             `;
 
@@ -2350,8 +3022,8 @@ async function chargerDemandesAgent() {
 
                         <h3>
                             ${escapeHTML(
-                                demande.demarche
-                            )}
+                demande.demarche
+            )}
                         </h3>
 
                         <p class="muted">
@@ -2362,8 +3034,8 @@ async function chargerDemandesAgent() {
 
                             Date :
                             ${escapeHTML(
-                                demande.date_demande
-                            )}
+                demande.date_demande
+            )}
 
                         </p>
 
@@ -2374,8 +3046,8 @@ async function chargerDemandesAgent() {
     <span class="status">
 
         ${escapeHTML(
-            demande.statut
-        )}
+                demande.statut
+            )}
 
     </span>
 
@@ -2447,9 +3119,9 @@ async function chargerRendezVousAgent() {
             liste.innerHTML = `
                 <p class="muted">
                     ${escapeHTML(
-                        data.message ||
-                        "Impossible de récupérer les rendez-vous."
-                    )}
+                data.message ||
+                "Impossible de récupérer les rendez-vous."
+            )}
                 </p>
             `;
 
@@ -2486,8 +3158,8 @@ async function chargerRendezVousAgent() {
 
                             <h3>
                                 ${escapeHTML(
-                                    rendezvous.demarche
-                                )}
+                    rendezvous.demarche
+                )}
                             </h3>
 
                             <p class="muted">
@@ -2499,39 +3171,39 @@ async function chargerRendezVousAgent() {
 
                                 Citoyen :
                                 ${escapeHTML(
-                                    rendezvous.prenom
-                                )}
+                    rendezvous.prenom
+                )}
                                 ${escapeHTML(
-                                    rendezvous.nom
-                                )}
+                    rendezvous.nom
+                )}
 
                                 <br>
 
                                 Email :
                                 ${escapeHTML(
-                                    rendezvous.email
-                                )}
+                    rendezvous.email
+                )}
 
                                 <br>
 
                                 Date :
                                 ${escapeHTML(
-                                    rendezvous.date_rendezvous
-                                )}
+                    rendezvous.date_rendezvous
+                )}
 
                                 <br>
 
                                 Heure :
                                 ${escapeHTML(
-                                    rendezvous.heure_rendezvous
-                                )}
+                    rendezvous.heure_rendezvous
+                )}
 
                                 <br>
 
                                 Motif :
                                 ${escapeHTML(
-                                    rendezvous.motif
-                                )}
+                    rendezvous.motif
+                )}
 
                             </p>
 
@@ -2542,8 +3214,8 @@ async function chargerRendezVousAgent() {
     <span class="status">
 
         ${escapeHTML(
-            rendezvous.statut
-        )}
+                    rendezvous.statut
+                )}
 
     </span>
 
@@ -2647,32 +3319,32 @@ async function voirDemandeAgent(id) {
 
                     <h2>
                         ${escapeHTML(
-                            demande.demarche
-                        )}
+            demande.demarche
+        )}
                     </h2>
 
 
                     <p>
                         <strong>Statut :</strong>
                         ${escapeHTML(
-                            demande.statut
-                        )}
+            demande.statut
+        )}
                     </p>
 
 
                     <p>
                         <strong>Date de demande :</strong>
                         ${escapeHTML(
-                            demande.date_demande
-                        )}
+            demande.date_demande
+        )}
                     </p>
 
 
                     <p>
                         <strong>Utilisateur :</strong>
                         ${escapeHTML(
-                            demande.utilisateur_id
-                        )}
+            demande.utilisateur_id
+        )}
                     </p>
 
                 </section>
@@ -2691,40 +3363,40 @@ async function voirDemandeAgent(id) {
 
                     <p>
                         ${escapeHTML(
-                            demande.description || ""
-                        )}
+            demande.description || ""
+        )}
                     </p>
 
 
                     <p>
                         <strong>Service :</strong>
                         ${escapeHTML(
-                            demande.service || ""
-                        )}
+            demande.service || ""
+        )}
                     </p>
 
 
                     <p>
                         <strong>Lieu :</strong>
                         ${escapeHTML(
-                            demande.lieu || ""
-                        )}
+            demande.lieu || ""
+        )}
                     </p>
 
 
                     <p>
                         <strong>Délai :</strong>
                         ${escapeHTML(
-                            demande.delai || ""
-                        )}
+            demande.delai || ""
+        )}
                     </p>
 
 
                     <p>
                         <strong>Frais :</strong>
                         ${escapeHTML(
-                            demande.frais || ""
-                        )}
+            demande.frais || ""
+        )}
                     </p>
 
                 </section>
@@ -2737,31 +3409,30 @@ async function voirDemandeAgent(id) {
                     </h2>
 
 
-                    ${
-                        etapes.length > 0
+                    ${etapes.length > 0
 
-                        ? `
+                ? `
                             <ol>
 
                                 ${etapes.map(
-                                    etape => `
+                    etape => `
                                         <li>
                                             ${escapeHTML(
-                                                etape
-                                            )}
+                        etape
+                    )}
                                         </li>
                                     `
-                                ).join("")}
+                ).join("")}
 
                             </ol>
                         `
 
-                        : `
+                : `
                             <p class="muted">
                                 Aucune étape renseignée.
                             </p>
                         `
-                    }
+            }
 
                 </section>
 
@@ -2894,7 +3565,7 @@ async function chargerStatistiquesStatuts() {
         }
 
         container.innerHTML =
-            data.statuts.map(function(statut) {
+            data.statuts.map(function (statut) {
 
                 return `
                     <div class="service-stat">
@@ -2909,11 +3580,11 @@ async function chargerStatistiquesStatuts() {
 
                     </div>
                 `;
-            
+
 
             }).join("");
 
-            creerGraphiqueStatuts(data.statuts);
+        creerGraphiqueStatuts(data.statuts);
 
     } catch (error) {
 
@@ -2933,11 +3604,11 @@ function creerGraphiqueStatuts(statuts) {
         return;
     }
 
-    const labels = statuts.map(function(item) {
+    const labels = statuts.map(function (item) {
         return item.statut;
     });
 
-    const valeurs = statuts.map(function(item) {
+    const valeurs = statuts.map(function (item) {
         return item.total;
     });
 
@@ -2983,11 +3654,11 @@ function creerGraphiqueRendezVous(statuts) {
         return;
     }
 
-    const labels = statuts.map(function(item) {
+    const labels = statuts.map(function (item) {
         return item.statut;
     });
 
-    const valeurs = statuts.map(function(item) {
+    const valeurs = statuts.map(function (item) {
         return item.total;
     });
 
@@ -3034,11 +3705,11 @@ function creerGraphiqueMois(mois) {
         return;
     }
 
-    const labels = mois.map(function(item) {
+    const labels = mois.map(function (item) {
         return item.mois;
     });
 
-    const valeurs = mois.map(function(item) {
+    const valeurs = mois.map(function (item) {
         return item.total;
     });
 
@@ -3168,11 +3839,11 @@ function creerGraphiqueServices(services) {
         return;
     }
 
-    const labels = services.map(function(item) {
+    const labels = services.map(function (item) {
         return item.service;
     });
 
-    const valeurs = services.map(function(item) {
+    const valeurs = services.map(function (item) {
         return item.total;
     });
 
@@ -3259,7 +3930,7 @@ async function chargerStatistiquesServices() {
         }
 
         container.innerHTML =
-            data.services.map(function(service) {
+            data.services.map(function (service) {
 
                 return `
                     <div class="service-stat">
@@ -3277,7 +3948,7 @@ async function chargerStatistiquesServices() {
 
             }).join("");
 
-            creerGraphiqueServices(data.services);
+        creerGraphiqueServices(data.services);
 
     } catch (error) {
 
@@ -3328,7 +3999,7 @@ function servicesPage() {
 
                 ${services.map(function (service) {
 
-                    return `
+        return `
                         <div
                             class="card service-card"
                             onclick="serviceDetail('${service.id}')"
@@ -3357,7 +4028,7 @@ function servicesPage() {
                         </div>
                     `;
 
-                }).join("")}
+    }).join("")}
 
             </div>
 
@@ -3445,14 +4116,13 @@ function serviceDetail(serviceId) {
 
                 <div class="list">
 
-                    ${
-                        serviceProcedures.length > 0
+                    ${serviceProcedures.length > 0
 
-                        ?
+            ?
 
-                        serviceProcedures.map(function (item) {
+            serviceProcedures.map(function (item) {
 
-                            return `
+                return `
                                 <div class="card procedure-card">
 
                                     <h3>
@@ -3475,11 +4145,11 @@ function serviceDetail(serviceId) {
                                 </div>
                             `;
 
-                        }).join("")
+            }).join("")
 
-                        :
+            :
 
-                        `
+            `
                             <div class="card">
 
                                 <h3>
@@ -3494,7 +4164,7 @@ function serviceDetail(serviceId) {
 
                             </div>
                         `
-                    }
+        }
 
                 </div>
 
@@ -3656,13 +4326,12 @@ async function procedure(serviceId, procedureId) {
                 >
                     <i class="fa-solid fa-arrow-left"></i>
 
-                    ${
-                        procedureOrigin === 'assistant'
-                            ? "Retour à l'assistant"
-                            : procedureOrigin === 'home'
-                                ? "Retour à l'accueil"
-                                : "Retour à " + service.name
-                    }
+                    ${procedureOrigin === 'assistant'
+                ? "Retour à l'assistant"
+                : procedureOrigin === 'home'
+                    ? "Retour à l'accueil"
+                    : "Retour à " + service.name
+            }
 
                 </p>
 
@@ -3701,18 +4370,17 @@ async function procedure(serviceId, procedureId) {
                         </h2>
 
 
-                        ${
-                            data.documents &&
-                            data.documents.length > 0
+                        ${data.documents &&
+                data.documents.length > 0
 
-                            ?
+                ?
 
-                            data.documents.map(function (document) {
+                data.documents.map(function (document) {
 
-                                const obligatoire =
-                                    Number(document.obligatoire) === 1;
+                    const obligatoire =
+                        Number(document.obligatoire) === 1;
 
-                                return `
+                    return `
                                     <div class="check">
 
                                         <i class="fa-solid fa-circle-check"></i>
@@ -3720,26 +4388,25 @@ async function procedure(serviceId, procedureId) {
                                         <span>
                                             ${escapeHTML(document.nom_document)}
 
-                                            ${
-                                                obligatoire
-                                                    ? `<small class="muted"> - Obligatoire</small>`
-                                                    : `<small class="muted"> - Selon votre situation</small>`
-                                            }
+                                            ${obligatoire
+                            ? `<small class="muted"> - Obligatoire</small>`
+                            : `<small class="muted"> - Selon votre situation</small>`
+                        }
                                         </span>
 
                                     </div>
                                 `;
 
-                            }).join("")
+                }).join("")
 
-                            :
+                :
 
-                            `
+                `
                                 <p class="muted">
                                     Aucun document enregistré.
                                 </p>
                             `
-                        }
+            }
 
 
                         <br>
@@ -3751,29 +4418,28 @@ async function procedure(serviceId, procedureId) {
                         </h2>
 
 
-                        ${
-                            etapes.length > 0
+                        ${etapes.length > 0
 
-                            ?
+                ?
 
-                            etapes.map(function (etape) {
+                etapes.map(function (etape) {
 
-                                return `
+                    return `
                                     <p>
                                         ${escapeHTML(etape.trim())}
                                     </p>
                                 `;
 
-                            }).join("")
+                }).join("")
 
-                            :
+                :
 
-                            `
+                `
                                 <p class="muted">
                                     Aucune étape enregistrée.
                                 </p>
                             `
-                        }
+            }
 
 
                         <br>
@@ -3953,9 +4619,9 @@ async function requestsPage() {
 
                     <p class="muted">
                         ${escapeHTML(
-                            data.message ||
-                            "Impossible de récupérer vos demandes."
-                        )}
+                data.message ||
+                "Impossible de récupérer vos demandes."
+            )}
                     </p>
 
                 </div>
@@ -4013,7 +4679,7 @@ async function requestsPage() {
 
             ${data.demandes.map(function (demande) {
 
-                return `
+            return `
                     <div class="card">
 
                         <div class="notification">
@@ -4026,8 +4692,8 @@ async function requestsPage() {
 
                                 <h3>
                                     ${escapeHTML(
-                                        demande.demarche_nom
-                                    )}
+                demande.demarche_nom
+            )}
                                 </h3>
                                 <div>
 
@@ -4041,8 +4707,8 @@ async function requestsPage() {
                                 <p class="muted">
                                     Date :
                                     ${escapeHTML(
-                                        demande.date_demande
-                                    )}
+                demande.date_demande
+            )}
                                 </p>
 
                                 <button
@@ -4060,7 +4726,7 @@ async function requestsPage() {
                     </div>
                 `;
 
-            }).join("")}
+        }).join("")}
 
         `;
 
@@ -4143,9 +4809,9 @@ async function adminRequestsPage() {
 
                     <p class="muted">
                         ${escapeHTML(
-                            data.message ||
-                            "Accès refusé."
-                        )}
+                data.message ||
+                "Accès refusé."
+            )}
                     </p>
 
                 </div>
@@ -4180,32 +4846,32 @@ async function adminRequestsPage() {
 
                         <h3>
                             ${escapeHTML(
-                                demande.demarche_nom
-                            )}
+                    demande.demarche_nom
+                )}
                         </h3>
 
                         <p>
                             <strong>Utilisateur :</strong>
                             ${escapeHTML(
-                                demande.prenom
-                            )}
+                    demande.prenom
+                )}
                             ${escapeHTML(
-                                demande.nom
-                            )}
+                    demande.nom
+                )}
                         </p>
 
                         <p>
                             <strong>Email :</strong>
                             ${escapeHTML(
-                                demande.email
-                            )}
+                    demande.email
+                )}
                         </p>
 
                         <p>
                             <strong>Téléphone :</strong>
                             ${escapeHTML(
-                                demande.telephone
-                            )}
+                    demande.telephone
+                )}
                         </p>
 
                         
@@ -4259,8 +4925,8 @@ async function adminRequestsPage() {
                         <p class="muted">
                             <strong>Date :</strong>
                             ${escapeHTML(
-                                demande.date_demande
-                            )}
+                    demande.date_demande
+                )}
                         </p>
 
                     </div>
@@ -4316,22 +4982,22 @@ async function modifierStatutDemande(id, statut) {
             data
         );
 
-if (!data.success) {
+        if (!data.success) {
 
-    showToast(
-        data.message ||
-        "Impossible de modifier le statut."
-    );
+            showToast(
+                data.message ||
+                "Impossible de modifier le statut."
+            );
 
-    return;
-}
+            return;
+        }
 
-showToast(
-    "Statut modifié avec succès."
-);
+        showToast(
+            "Statut modifié avec succès."
+        );
 
-await adminRequestsPage();
- 
+        await adminRequestsPage();
+
 
     } catch (error) {
 
@@ -4416,9 +5082,9 @@ async function adminAppointmentsPage() {
 
                     <p class="muted">
                         ${escapeHTML(
-                            data.message ||
-                            "Accès refusé."
-                        )}
+                data.message ||
+                "Accès refusé."
+            )}
                     </p>
 
                 </div>
@@ -4455,59 +5121,59 @@ async function adminAppointmentsPage() {
 
                         <h3>
                             ${escapeHTML(
-                                rendezvous.demarche_nom
-                            )}
+                    rendezvous.demarche_nom
+                )}
                         </h3>
 
 
                         <p>
                             <strong>Citoyen :</strong>
                             ${escapeHTML(
-                                rendezvous.prenom
-                            )}
+                    rendezvous.prenom
+                )}
                             ${escapeHTML(
-                                rendezvous.nom
-                            )}
+                    rendezvous.nom
+                )}
                         </p>
 
 
                         <p>
                             <strong>Email :</strong>
                             ${escapeHTML(
-                                rendezvous.email
-                            )}
+                    rendezvous.email
+                )}
                         </p>
 
 
                         <p>
                             <strong>Téléphone :</strong>
                             ${escapeHTML(
-                                rendezvous.telephone
-                            )}
+                    rendezvous.telephone
+                )}
                         </p>
 
 
                         <p>
                             <strong>Date :</strong>
                             ${escapeHTML(
-                                rendezvous.date_rendezvous
-                            )}
+                    rendezvous.date_rendezvous
+                )}
                         </p>
 
 
                         <p>
                             <strong>Heure :</strong>
                             ${escapeHTML(
-                                rendezvous.heure_rendezvous
-                            )}
+                    rendezvous.heure_rendezvous
+                )}
                         </p>
 
 
                         <p>
                             <strong>Motif :</strong>
                             ${escapeHTML(
-                                rendezvous.motif || ""
-                            )}
+                    rendezvous.motif || ""
+                )}
                         </p>
 
 
@@ -4562,8 +5228,8 @@ async function adminAppointmentsPage() {
 
                             Créé le :
                             ${escapeHTML(
-                                rendezvous.created_at
-                            )}
+                    rendezvous.created_at
+                )}
 
                         </p>
 
@@ -4751,15 +5417,15 @@ async function viewRequest(id) {
 
                     <h1>
                         ${escapeHTML(
-                            demande.demarche_nom
-                        )}
+            demande.demarche_nom
+        )}
                     </h1>
 
 
                     <p class="muted">
                         ${escapeHTML(
-                            demande.description || ""
-                        )}
+            demande.description || ""
+        )}
                     </p>
 
 
@@ -4775,48 +5441,48 @@ async function viewRequest(id) {
                     <p>
                         <strong>Statut :</strong>
                         ${escapeHTML(
-                            demande.statut
-                        )}
+            demande.statut
+        )}
                     </p>
 
 
                     <p>
                         <strong>Date :</strong>
                         ${escapeHTML(
-                            demande.date_demande
-                        )}
+            demande.date_demande
+        )}
                     </p>
 
 
                     <p>
                         <strong>Service :</strong>
                         ${escapeHTML(
-                            demande.service || "À déterminer"
-                        )}
+            demande.service || "À déterminer"
+        )}
                     </p>
 
 
                     <p>
                         <strong>Lieu :</strong>
                         ${escapeHTML(
-                            demande.lieu || "À déterminer"
-                        )}
+            demande.lieu || "À déterminer"
+        )}
                     </p>
 
 
                     <p>
                         <strong>Délai :</strong>
                         ${escapeHTML(
-                            demande.delai || "À déterminer"
-                        )}
+            demande.delai || "À déterminer"
+        )}
                     </p>
 
 
                     <p>
                         <strong>Frais :</strong>
                         ${escapeHTML(
-                            demande.frais || "À déterminer"
-                        )}
+            demande.frais || "À déterminer"
+        )}
                     </p>
 
 
@@ -4829,39 +5495,37 @@ async function viewRequest(id) {
                     </h3>
 
 
-                    ${
-                        etapes.length > 0
+                    ${etapes.length > 0
 
-                        ?
+                ?
 
-                        etapes.map(function (etape) {
+                etapes.map(function (etape) {
 
-                            return `
+                    return `
                                 <p>
                                     ${escapeHTML(
-                                        etape.trim()
-                                    )}
+                        etape.trim()
+                    )}
                                 </p>
                             `;
 
-                        }).join("")
+                }).join("")
 
-                        :
+                :
 
-                        `
+                `
                             <p class="muted">
                                 Aucune étape enregistrée.
                             </p>
                         `
-                    }
+            }
 
 
-                    ${
-                        demande.statut !== "Annulée"
+                    ${demande.statut !== "Annulée"
 
-                        ?
+                ?
 
-                        `
+                `
                             <br>
 
                             <button
@@ -4873,10 +5537,10 @@ async function viewRequest(id) {
                             </button>
                         `
 
-                        :
+                :
 
-                        ""
-                    }
+                ""
+            }
 
                 </div>
 
@@ -5081,9 +5745,9 @@ async function appointmentsPage() {
 
                     <p class="muted">
                         ${escapeHTML(
-                            data.message ||
-                            "Impossible de récupérer vos rendez-vous."
-                        )}
+                data.message ||
+                "Impossible de récupérer vos rendez-vous."
+            )}
                     </p>
 
                 </div>
@@ -5133,7 +5797,7 @@ async function appointmentsPage() {
 
             ${data.rendezvous.map(function (rendezvous) {
 
-                return `
+            return `
                     <div class="card">
 
                         <div class="notification">
@@ -5146,43 +5810,43 @@ async function appointmentsPage() {
 
                                 <h3>
                                     ${escapeHTML(
-                                        rendezvous.demarche_nom
-                                    )}
+                rendezvous.demarche_nom
+            )}
                                 </h3>
 
                                 <p>
                                     <strong>Date :</strong>
                                     ${escapeHTML(
-                                        rendezvous.date_rendezvous
-                                    )}
+                rendezvous.date_rendezvous
+            )}
                                 </p>
 
                                 <p>
                                     <strong>Heure :</strong>
                                     ${escapeHTML(
-                                        rendezvous.heure_rendezvous
-                                    )}
+                rendezvous.heure_rendezvous
+            )}
                                 </p>
 
                                 <p>
                                     <strong>Motif :</strong>
                                     ${escapeHTML(
-                                        rendezvous.motif || ""
-                                    )}
+                rendezvous.motif || ""
+            )}
                                 </p>
 
                                 <p>
                                     <strong>Statut :</strong>
                                     ${escapeHTML(
-                                        rendezvous.statut
-                                    )}
+                rendezvous.statut
+            )}
                                 </p>
 
                                 <p class="muted">
                                     Créé le :
                                     ${escapeHTML(
-                                        rendezvous.created_at
-                                    )}
+                rendezvous.created_at
+            )}
                                 </p>
 
                                 ${rendezvous.statut === "En attente" ? `
@@ -5204,7 +5868,7 @@ async function appointmentsPage() {
                     </div>
                 `;
 
-            }).join("")}
+        }).join("")}
 
         `;
 
@@ -5267,19 +5931,19 @@ function showAppointmentForm() {
                             Sélectionnez une démarche
                         </option>
 
-                        ${Object.keys(procedures).map(function(serviceId) {
+                        ${Object.keys(procedures).map(function (serviceId) {
 
-                            return procedures[serviceId].map(function(procedure) {
+        return procedures[serviceId].map(function (procedure) {
 
-                                return `
+            return `
                                     <option value="${procedure.id}">
                                         ${escapeHTML(procedure.title)}
                                     </option>
                                 `;
 
-                            }).join("");
+        }).join("");
 
-                        }).join("")}
+    }).join("")}
 
                     </select>
 
@@ -5368,7 +6032,7 @@ function showAppointmentForm() {
     }
 
 
-    form.addEventListener("submit", async function(event) {
+    form.addEventListener("submit", async function (event) {
 
         event.preventDefault();
 
@@ -5688,25 +6352,24 @@ async function notificationsPage() {
         }
 
         container.innerHTML =
-            data.notifications.map(function(notification) {
+            data.notifications.map(function (notification) {
 
                 return `
                     <div class="notification">
 
                     <div class="round">
-    <i class="fa-solid ${
-        notification.type === "rendezvous"
-            ? "fa-calendar-check"
-            : "fa-file-circle-check"
-    }"></i>
+    <i class="fa-solid ${notification.type === "rendezvous"
+                        ? "fa-calendar-check"
+                        : "fa-file-circle-check"
+                    }"></i>
 </div>
 
                         <div>
 
                         <h3>
     ${notification.type === "rendezvous"
-        ? "Rendez-vous"
-        : "Demande"}
+                        ? "Rendez-vous"
+                        : "Demande"}
 </h3>
 
                             <p class="muted">
@@ -5726,31 +6389,31 @@ async function notificationsPage() {
 
             }).join("");
 
-            for (const notification of data.notifications) {
+        for (const notification of data.notifications) {
 
-    if (Number(notification.lu) === 0) {
+            if (Number(notification.lu) === 0) {
 
-        const formData = new URLSearchParams();
+                const formData = new URLSearchParams();
 
-        formData.append(
-            "notification_id",
-            notification.id
-        );
+                formData.append(
+                    "notification_id",
+                    notification.id
+                );
 
-        await fetch(
-            API_BASE_URL + "/marquer_notification_lue.php",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type":
-                        "application/x-www-form-urlencoded"
-                },
-                body: formData.toString(),
-                credentials: "same-origin"
+                await fetch(
+                    API_BASE_URL + "/marquer_notification_lue.php",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type":
+                                "application/x-www-form-urlencoded"
+                        },
+                        body: formData.toString(),
+                        credentials: "same-origin"
+                    }
+                );
             }
-        );
-    }
-}
+        }
 
         const notifBadge = getNotifBadge();
 
@@ -5816,8 +6479,8 @@ function profilePage() {
 
                 <h2>
                     ${escapeHTML(
-                        utilisateur.prenom + " " + utilisateur.nom
-                    )}
+        utilisateur.prenom + " " + utilisateur.nom
+    )}
                 </h2>
 
 
@@ -5863,7 +6526,6 @@ function profilePage() {
         </div>
     `;
 }
-
 function afficherModificationProfil() {
 
     if (!protect()) {
@@ -5879,95 +6541,139 @@ function afficherModificationProfil() {
     const utilisateur = utilisateurConnecte;
 
     page.innerHTML = `
-        <div class="container">
+        <div class="container profile-edit-page">
 
             <div class="eyebrow">
                 COMPTE
             </div>
 
-            <h1>
-                Modifier mon profil
-            </h1>
+            <div class="profile-edit-header">
 
-            <div class="card">
+                <div>
+                    <h1>
+                        Modifier mon profil
+                    </h1>
 
-                <div class="form-group">
-
-                    <label for="profilNom">
-                        Nom
-                    </label>
-
-                    <input
-                        type="text"
-                        id="profilNom"
-                        value="${escapeHTML(utilisateur.nom || "")}"
-                    >
-
+                    <p class="muted">
+                        Mettez à jour vos informations personnelles.
+                    </p>
                 </div>
 
-
-                <div class="form-group">
-
-                    <label for="profilPrenom">
-                        Prénom
-                    </label>
-
-                    <input
-                        type="text"
-                        id="profilPrenom"
-                        value="${escapeHTML(utilisateur.prenom || "")}"
-                    >
-
-                </div>
+            </div>
 
 
-                <div class="form-group">
-
-                    <label for="profilEmail">
-                        Email
-                    </label>
-
-                    <input
-                        type="email"
-                        id="profilEmail"
-                        value="${escapeHTML(utilisateur.email || "")}"
-                    >
-
-                </div>
+            <div class="profile-edit-card">
 
 
-                <div class="form-group">
-
-                    <label for="profilTelephone">
-                        Téléphone
-                    </label>
-
-                    <input
-                        type="text"
-                        id="profilTelephone"
-                        value="${escapeHTML(utilisateur.telephone || "")}"
-                    >
-
-                </div>
+                <div class="profile-edit-form">
 
 
-                <div style="margin-top: 20px;">
+                    <div class="profile-form-row">
+
+                        <div class="form-group">
+
+                            <label for="profilNom">
+                                Nom
+                            </label>
+
+                            <input
+                                type="text"
+                                id="profilNom"
+                                value="${escapeHTML(utilisateur.nom || "")}"
+                                autocomplete="family-name"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="profilPrenom">
+                                Prénom
+                            </label>
+
+                            <input
+                                type="text"
+                                id="profilPrenom"
+                                value="${escapeHTML(utilisateur.prenom || "")}"
+                                autocomplete="given-name"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="profile-form-row">
+
+                        <div class="form-group">
+
+                            <label for="profilEmail">
+                                Email
+                            </label>
+
+                            <input
+                                type="email"
+                                id="profilEmail"
+                                value="${escapeHTML(utilisateur.email || "")}"
+                                autocomplete="email"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="profilTelephone">
+                                Téléphone
+                            </label>
+
+                            <input
+                                type="text"
+                                id="profilTelephone"
+                                value="${escapeHTML(utilisateur.telephone || "")}"
+                                autocomplete="tel"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="profile-edit-info">
+
+                        <i class="fa-solid fa-circle-info"></i>
+
+                        <span>
+                            Ces informations sont utilisées pour votre compte
+                            et le suivi de vos démarches.
+                        </span>
+
+                    </div>
+
+
+                    <div class="profile-edit-actions">
 
                     <button
-                        class="btn"
-                        onclick="enregistrerProfil()"
-                    >
-                        <i class="fa-solid fa-floppy-disk"></i>
-                        Enregistrer
-                    </button>
+    class="btn"
+    onclick="enregistrerProfil()"
+    type="button"
+>
+    <i class="fa-solid fa-floppy-disk"></i>
+    Enregistrer
+</button>
+
+                        <button
+                            class="btn btn-outline"
+                            onclick="profilePage()"
+                            type="button"
+                        >
+                            Annuler
+                        </button>
 
 
-                    <button
-                        class="btn btn-outline"
-                        onclick="profilePage()"
-                    >
-                        Annuler
-                    </button>
+
+                    </div>
 
                 </div>
 
@@ -6435,39 +7141,37 @@ async function assistantSearch() {
 
                     <ul>
 
-                        ${
-                            data.documents &&
-                            data.documents.length > 0
+                        ${data.documents &&
+                    data.documents.length > 0
 
-                            ?
+                    ?
 
-                            data.documents.map(function (document) {
+                    data.documents.map(function (document) {
 
-                                const obligatoire =
-                                    Number(document.obligatoire) === 1;
+                        const obligatoire =
+                            Number(document.obligatoire) === 1;
 
-                                return `
+                        return `
                                     <li>
                                         ${escapeHTML(document.nom_document)}
 
-                                        ${
-                                            obligatoire
-                                                ? `<small class="muted"> - Obligatoire</small>`
-                                                : `<small class="muted"> - Selon votre situation</small>`
-                                        }
+                                        ${obligatoire
+                                ? `<small class="muted"> - Obligatoire</small>`
+                                : `<small class="muted"> - Selon votre situation</small>`
+                            }
                                     </li>
                                 `;
 
-                            }).join("")
+                    }).join("")
 
-                            :
+                    :
 
-                            `
+                    `
                                 <li>
                                     Aucun document enregistré.
                                 </li>
                             `
-                        }
+                }
 
                     </ul>
 
@@ -6894,21 +7598,21 @@ function renderPage(route) {
         case "admin-appointments":
             adminAppointmentsPage();
             break;
-        
+
         case "admin-dashboard":
 
-    if (!protectDashboard()) {
-        return;
-    }
+            if (!protectDashboard()) {
+                return;
+            }
 
-    adminDashboardPage();
+            adminDashboardPage();
 
-    break;
+            break;
 
-        
+
         case "admin-users":
-    adminUsersPage();
-    break;
+            adminUsersPage();
+            break;
 
         case "appointments":
             appointmentsPage();
@@ -7095,35 +7799,50 @@ window.addEventListener(
 /* =========================================================
    CHARGEMENT INITIAL
 ========================================================= */
-
 document.addEventListener(
     "DOMContentLoaded",
     async function () {
 
         await verifierSession();
+
         console.log(
-    "UTILISATEUR APRÈS VÉRIFICATION :",
-    utilisateurConnecte
-);
+            "UTILISATEUR APRÈS VÉRIFICATION :",
+            utilisateurConnecte
+        );
 
-console.log(
-    "ROLE APRÈS VÉRIFICATION :",
-    utilisateurConnecte?.role
-);
+        console.log(
+            "ROLE APRÈS VÉRIFICATION :",
+            utilisateurConnecte?.role
+        );
 
+        const params =
+            new URLSearchParams(
+                window.location.search
+            );
+
+        const resetToken =
+            params.get("reset_token");
+
+        if (resetToken) {
+
+            afficherReinitialisationMotDePasse(
+                resetToken
+            );
+
+            return;
+        }
 
         const route =
             window.location.hash
                 .replace("#", "") || "home";
 
-
         renderPage(route);
     }
 );
- 
+
 function adminUsersPage() {
 
-     if (!protectAdmin()) {
+    if (!protectAdmin()) {
         return;
     }
 
@@ -7148,13 +7867,9 @@ function adminUsersPage() {
 
             </section>
 
-            <section class="card">
-
-                <div id="adminUsersContainer">
-                    Chargement des utilisateurs...
-                </div>
-
-            </section>
+            <div id="adminUsersContainer">
+    Chargement des utilisateurs...
+</div>
 
         </div>
     `;
@@ -7228,16 +7943,16 @@ async function chargerUtilisateursAdmin() {
                     <tbody>
         `;
 
-        data.utilisateurs.forEach(function(utilisateur) {
+        data.utilisateurs.forEach(function (utilisateur) {
 
             let serviceHTML = "Aucun service";
 
-if (
-    utilisateur.role === "agent" ||
-    utilisateur.role === "responsable"
-) {
+            if (
+                utilisateur.role === "agent" ||
+                utilisateur.role === "responsable"
+            ) {
 
-    serviceHTML = `
+                serviceHTML = `
         <select
             onchange="modifierRoleUtilisateur(
                 ${utilisateur.id},
@@ -7283,8 +7998,8 @@ if (
 
         </select>
     `;
-}
-            
+            }
+
 
             html += `
                 <tr>
@@ -7385,14 +8100,14 @@ async function modifierRoleUtilisateur(id, role, serviceId = null) {
 
         if (role === "agent" || role === "responsable") {
 
-    if (serviceId !== null && serviceId !== "") {
-        formData.append("service_id", serviceId);
-    }
+            if (serviceId !== null && serviceId !== "") {
+                formData.append("service_id", serviceId);
+            }
 
-} else {
+        } else {
 
-    formData.append("service_id", "");
-}
+            formData.append("service_id", "");
+        }
 
         const response = await fetch(
             API_BASE_URL + "/admin_utilisateurs.php",
@@ -7459,7 +8174,7 @@ async function chargerNotifications() {
         }
 
         const notificationsNonLues =
-            data.notifications.filter(function(notification) {
+            data.notifications.filter(function (notification) {
                 return Number(notification.lu) === 0;
             }).length;
 
@@ -7479,3 +8194,4 @@ async function chargerNotifications() {
         );
     }
 }
+

@@ -330,7 +330,6 @@ let lastAssistantMessage = "";
 
 function openProcedureFromService(serviceId, procedureId) {
 
-    procedureOrigin = "services";
 
     procedure(serviceId, procedureId);
 }
@@ -531,6 +530,12 @@ function updateAdminNav() {
     const citizenAppointmentsLink =
         document.getElementById("citizenAppointmentsLink");
 
+    const homeNavLink =
+    document.querySelector('nav a[data-page="home"]');
+
+    const servicesNavLink =
+    document.querySelector('nav a[data-page="services"]');
+
     if (
         !dashboardLink ||
         !link ||
@@ -574,16 +579,33 @@ function updateAdminNav() {
 
         if (utilisateurConnecte.role === "admin") {
 
-            link.style.display = "";
-            appointmentsLink.style.display = "";
-            usersLink.style.display = "";
+    link.style.display = "";
+    appointmentsLink.style.display = "";
+    usersLink.style.display = "";
 
-        } else {
+    if (homeNavLink) {
+        homeNavLink.style.display = "none";
+    }
 
-            link.style.display = "none";
-            appointmentsLink.style.display = "none";
-            usersLink.style.display = "none";
-        }
+    if (servicesNavLink) {
+        servicesNavLink.style.display = "none";
+    }
+
+    } else {
+
+    link.style.display = "none";
+    appointmentsLink.style.display = "none";
+    usersLink.style.display = "none";
+
+    if (homeNavLink) {
+        homeNavLink.style.display = "";
+    }
+
+    if (servicesNavLink) {
+        servicesNavLink.style.display = "";
+    }
+}
+
 
 
         // ==============================
@@ -631,6 +653,40 @@ function updateAdminNav() {
         citizenRequestsLink.style.display = "none";
         citizenAppointmentsLink.style.display = "none";
     }
+    if (homeNavLink) {
+    homeNavLink.style.display = "";
+}
+
+if (servicesNavLink) {
+    servicesNavLink.style.display = "";
+}
+if (
+    sessionConnectee &&
+    utilisateurConnecte &&
+    utilisateurConnecte.role === "admin"
+) {
+    const homeNavLink =
+        document.getElementById("homeNavLink");
+
+    const servicesNavLink =
+        document.getElementById("servicesNavLink");
+
+    if (homeNavLink) {
+        homeNavLink.style.setProperty(
+            "display",
+            "none",
+            "important"
+        );
+    }
+
+    if (servicesNavLink) {
+        servicesNavLink.style.setProperty(
+            "display",
+            "none",
+            "important"
+        );
+    }
+}
 }
 
 async function logout() {
@@ -739,11 +795,12 @@ function renderLogin() {
     }
 
     page.innerHTML = `
-        <div class="container">
-                <h1>
-                    Se connecter
-                </h1>
-                </p>
+    <div class="container auth-page">
+    <div class="card auth-card">
+
+            <h1>
+                Se connecter
+            </h1>
 
 
                 <form onsubmit="login(event)" autocomplete="on">
@@ -770,14 +827,25 @@ function renderLogin() {
                         <label for="loginPassword">
                             Mot de passe
                         </label>
+                    <div class="password-field">
+    <input
+        id="loginPassword"
+        type="password"
+        placeholder="Votre mot de passe"
+        required
+        autocomplete="new-password"
+    >
 
-                        <input
-                            id="loginPassword"
-                            type="password"
-                            placeholder="Votre mot de passe"
-                            required
-                            autocomplete="new-password"
-                        >
+    <button
+        type="button"
+        class="password-toggle"
+        onclick="togglePassword('loginPassword', this)"
+        aria-label="Afficher le mot de passe"
+    >
+        <i class="fa-solid fa-eye"></i>
+    </button>
+</div>
+
 
                     </div>
                     <div class="forgot-password-container">
@@ -823,7 +891,7 @@ function renderLogin() {
             </div>
 
         </div>
-    `;
+  `;
 
 
     const loginEmail =
@@ -842,6 +910,40 @@ function renderLogin() {
     }
 }
 
+function togglePassword(inputId, button) {
+
+    const input = document.getElementById(inputId);
+
+    if (!input) {
+        return;
+    }
+
+    if (input.type === "password") {
+
+        input.type = "text";
+
+        button.innerHTML =
+            '<i class="fa-solid fa-eye-slash"></i>';
+
+        button.setAttribute(
+            "aria-label",
+            "Masquer le mot de passe"
+        );
+
+    } else {
+
+        input.type = "password";
+
+        button.innerHTML =
+            '<i class="fa-solid fa-eye"></i>';
+
+        button.setAttribute(
+            "aria-label",
+            "Afficher le mot de passe"
+        );
+    }
+}
+
 function afficherMotDePasseOublie() {
 
     const page = getPage();
@@ -851,13 +953,8 @@ function afficherMotDePasseOublie() {
     }
 
     page.innerHTML = `
-        <div class="container">
-
-            <div class="card auth-card">
-
-                <div class="eyebrow">
-                    RÉCUPÉRATION
-                </div>
+    <div class="container auth-page">
+        <div class="card auth-card">
 
                 <h1>
                     Mot de passe oublié
@@ -1187,13 +1284,8 @@ function renderRegister() {
     }
 
     page.innerHTML = `
-        <div class="container">
-
-            <div class="card auth-card">
-
-                <div class="eyebrow">
-                    CRÉATION DE COMPTE
-                </div>
+    <div class="container auth-page">
+        <div class="card auth-card">
 
                 <h1>
                     Créer votre compte
@@ -1763,7 +1855,7 @@ function afficherVerificationEmail(email) {
                 >
                     <i class="fa-solid fa-envelope"></i>
                     Renvoyer l'email de vérification
-                </button>
+                </button><br>
 
                 <br>
 
@@ -2111,12 +2203,12 @@ function homePage() {
 
                 <div class="services-grid">
 
-                    ${services.map(function (service) {
+                    ${services.slice(0, 3).map(function (service) {
 
         return `
                             <div
                                 class="card service-card"
-                                onclick="serviceDetail('${service.id}')"
+                                onclick="serviceDetail('${service.id}', 'home')"
                             >
 
                                 <div class="service-icon">
@@ -2365,7 +2457,6 @@ function adminDashboardPage() {
     chargerStatistiquesRendezVous();
     chargerStatistiquesMois();
 }
-
 function agentSpacePage() {
 
     const page = getPage();
@@ -2374,8 +2465,16 @@ function agentSpacePage() {
         return;
     }
 
+    window.scrollTo({
+    top: 0,
+    behavior: "instant"
+});
+
+
     page.innerHTML = `
+
     <div class="container">
+
 
         <section class="page-header">
 
@@ -2392,6 +2491,7 @@ function agentSpacePage() {
 
         <section class="dashboard-grid">
 
+
             <div class="stat-card">
 
                 <div class="stat-icon">
@@ -2406,11 +2506,12 @@ function agentSpacePage() {
 
                     <strong>
                         ${escapeHTML(
-        utilisateurConnecte?.prenom || ""
-    )}
+                            utilisateurConnecte?.prenom || ""
+                        )}
+
                         ${escapeHTML(
-        utilisateurConnecte?.nom || ""
-    )}
+                            utilisateurConnecte?.nom || ""
+                        )}
                     </strong>
 
                 </div>
@@ -2438,8 +2539,13 @@ function agentSpacePage() {
 
             </div>
 
+
         </section>
 
+
+        <!-- =========================================
+             DEMANDES
+        ========================================== -->
 
         <section class="page-header">
 
@@ -2463,6 +2569,10 @@ function agentSpacePage() {
         </div>
 
 
+        <!-- =========================================
+             RENDEZ-VOUS
+        ========================================== -->
+
         <section class="page-header">
 
             <h2>
@@ -2484,12 +2594,613 @@ function agentSpacePage() {
 
         </div>
 
+
+        <!-- =========================================
+             DÉMARCHES
+        ========================================== -->
+
+        <section class="page-header">
+
+            <h2>
+                Démarches de votre service
+            </h2>
+
+            <p class="muted">
+                Voici les démarches disponibles pour votre service.
+            </p>
+
+        </section>
+
+
+        <div id="agentProceduresList">
+
+            <p class="muted">
+                Chargement des démarches...
+            </p>
+
+        </div>
+
+
     </div>
-`;
+
+    `;
+
 
     chargerDemandesAgent();
+
     chargerRendezVousAgent();
+
+    chargerDemarchesAgent();
 }
+
+async function voirDemarcheAgent(id) {
+
+    const page = getPage();
+
+    if (!page) {
+        return;
+    }
+
+    window.scrollTo({
+        top: 0,
+        behavior: "instant"
+    });
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/index.php?id=" + id,
+            {
+                credentials: "include"
+            }
+        );
+
+        const data = await response.json();
+
+        console.log("Détail démarche agent :", data);
+
+        const demarche = data.demarche || data;
+
+        if (!demarche || !demarche.id) {
+
+            page.innerHTML = `
+                <div class="container">
+
+                    <p
+                        class="link"
+                        onclick="agentSpacePage()"
+                    >
+                        <i class="fa-solid fa-arrow-left"></i>
+                        Retour à l'espace agent
+                    </p>
+
+                    <div class="card">
+
+                        <h2>
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            Démarche introuvable
+                        </h2>
+
+                        <p class="muted">
+                            Impossible de récupérer cette démarche.
+                        </p>
+
+                    </div>
+
+                </div>
+            `;
+
+            return;
+        }
+
+        page.innerHTML = `
+            <div class="container">
+
+                <p
+                    class="link"
+                    onclick="agentSpacePage()"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Retour à l'espace agent
+                </p>
+
+                <div class="card service-detail">
+
+                    <div class="row">
+
+                        <div class="service-icon">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </div>
+
+                        <div>
+
+                            <h1>
+                                ${escapeHTML(demarche.nom)}
+                            </h1>
+
+                            <p class="muted">
+                                ${escapeHTML(
+                                    demarche.description ||
+                                    "Aucune description disponible."
+                                )}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <hr>
+
+                    <h2>
+                        <i class="fa-solid fa-circle-info"></i>
+                        Informations
+                    </h2>
+
+                    <div class="list">
+
+                        <div class="card">
+                            <strong>Service</strong>
+                            <p class="muted">
+                                ${escapeHTML(
+                                    demarche.service ||
+                                    "Non renseigné"
+                                )}
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <strong>Lieu</strong>
+                            <p class="muted">
+                                ${escapeHTML(
+                                    demarche.lieu ||
+                                    "Non renseigné"
+                                )}
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <strong>Délai</strong>
+                            <p class="muted">
+                                ${escapeHTML(
+                                    demarche.delai ||
+                                    "Non renseigné"
+                                )}
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <strong>Frais</strong>
+                            <p class="muted">
+                                ${escapeHTML(
+                                    demarche.frais ||
+                                    "Non renseigné"
+                                )}
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="actions">
+
+                        <button
+                            class="btn"
+                            onclick="modifierDemarcheAgent(${demarche.id})"
+                        >
+                            <i class="fa-solid fa-pen"></i>
+                            Modifier la démarche
+                        </button>
+
+                    </div>
+
+                    <hr>
+
+                    <h2>
+                        <i class="fa-solid fa-list-check"></i>
+                        Étapes
+                    </h2>
+
+                    <div class="card">
+
+                        <p class="muted">
+                            ${escapeHTML(
+                                demarche.etapes ||
+                                "Aucune étape renseignée."
+                            )}
+                        </p>
+
+                    </div>
+
+                    <hr>
+
+                    <h2>
+                        <i class="fa-solid fa-folder-open"></i>
+                        Documents requis
+                    </h2>
+
+                    <div class="list">
+
+                        ${
+                            demarche.documents &&
+                            demarche.documents.length > 0
+
+                            ?
+
+                            demarche.documents.map(function (document) {
+
+                                return `
+                                    <div class="card">
+
+                                        <h3>
+                                            <i class="fa-solid fa-file"></i>
+                                            ${escapeHTML(
+                                                document.nom_document
+                                            )}
+                                        </h3>
+
+                                        <p class="muted">
+                                            ${escapeHTML(
+                                                document.description ||
+                                                "Aucune description disponible."
+                                            )}
+                                        </p>
+
+                                        <span class="badge">
+                                            ${
+                                                Number(
+                                                    document.obligatoire
+                                                ) === 1
+                                                    ? "Obligatoire"
+                                                    : "Facultatif"
+                                            }
+                                        </span>
+
+                                    </div>
+                                `;
+
+                            }).join("")
+
+                            :
+
+                            `
+                                <div class="card">
+
+                                    <p class="muted">
+                                        Aucun document renseigné.
+                                    </p>
+
+                                </div>
+                            `
+                        }
+
+                    </div>
+
+                </div>
+
+            </div>
+        `;
+
+    } catch (error) {
+
+        console.error(
+            "Erreur détail démarche agent :",
+            error
+        );
+
+        page.innerHTML = `
+            <div class="container">
+
+                <p
+                    class="link"
+                    onclick="agentSpacePage()"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Retour à l'espace agent
+                </p>
+
+                <div class="card">
+
+                    <h2>
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        Erreur
+                    </h2>
+
+                    <p class="muted">
+                        Impossible de charger les détails de la démarche.
+                    </p>
+
+                </div>
+
+            </div>
+        `;
+    }
+}
+
+async function modifierDemarcheAgent(id) {
+
+    const page = getPage();
+
+    if (!page) {
+        return;
+    }
+
+    window.scrollTo({
+        top: 0,
+        behavior: "instant"
+    });
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/index.php?id=" + id,
+            {
+                credentials: "include"
+            }
+        );
+
+        const data = await response.json();
+
+        const demarche = data.demarche || data;
+
+        if (!demarche || !demarche.id) {
+
+            showToast("Démarche introuvable");
+
+            return;
+        }
+
+        page.innerHTML = `
+            <div class="container">
+
+                <p
+                    class="link"
+                    onclick="voirDemarcheAgent(${demarche.id})"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Retour aux détails
+                </p>
+
+                <div class="card">
+
+                    <h1>
+                        <i class="fa-solid fa-pen"></i>
+                        Modifier la démarche
+                    </h1>
+
+                    <p class="muted">
+                        Modifiez les informations générales de cette démarche.
+                    </p>
+
+                    <form id="modifierDemarcheForm">
+
+                        <div class="form-group">
+
+                            <label for="demarcheNom">
+                                Nom de la démarche
+                            </label>
+
+                            <input
+                                type="text"
+                                id="demarcheNom"
+                                value="${escapeHTML(demarche.nom || "")}"
+                                required
+                            >
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="demarcheDescription">
+                                Description
+                            </label>
+
+                            <textarea
+                                id="demarcheDescription"
+                                rows="5"
+                            >${escapeHTML(
+                                demarche.description || ""
+                            )}</textarea>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="demarcheLieu">
+                                Lieu
+                            </label>
+
+                            <input
+                                type="text"
+                                id="demarcheLieu"
+                                value="${escapeHTML(demarche.lieu || "")}"
+                            >
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="demarcheDelai">
+                                Délai
+                            </label>
+
+                            <input
+                                type="text"
+                                id="demarcheDelai"
+                                value="${escapeHTML(demarche.delai || "")}"
+                            >
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="demarcheFrais">
+                                Frais
+                            </label>
+
+                            <input
+                                type="text"
+                                id="demarcheFrais"
+                                value="${escapeHTML(demarche.frais || "")}"
+                            >
+
+                        </div>
+
+                        <div class="actions">
+
+                            <button
+                                type="button"
+                                class="btn"
+                                onclick="voirDemarcheAgent(${demarche.id})"
+                            >
+                                <i class="fa-solid fa-arrow-left"></i>
+                                Annuler
+                            </button>
+
+                            <button
+                                type="submit"
+                                class="btn"
+                            >
+                                <i class="fa-solid fa-save"></i>
+                                Enregistrer
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+        `;
+
+        document
+            .getElementById("modifierDemarcheForm")
+            .addEventListener(
+                "submit",
+                function (event) {
+
+                    event.preventDefault();
+
+                    enregistrerModificationDemarche(
+                        demarche.id
+                    );
+                }
+            );
+
+    } catch (error) {
+
+        console.error(
+            "Erreur formulaire modification :",
+            error
+        );
+
+        showToast(
+            "Impossible de charger le formulaire."
+        );
+    }
+}
+
+async function enregistrerModificationDemarche(id) {
+
+    const nom = document
+        .getElementById("demarcheNom")
+        .value
+        .trim();
+
+    const description = document
+        .getElementById("demarcheDescription")
+        .value
+        .trim();
+
+    const lieu = document
+        .getElementById("demarcheLieu")
+        .value
+        .trim();
+
+    const delai = document
+        .getElementById("demarcheDelai")
+        .value
+        .trim();
+
+    const frais = document
+        .getElementById("demarcheFrais")
+        .value
+        .trim();
+
+
+    if (!nom) {
+
+        showToast(
+            "Le nom de la démarche est obligatoire."
+        );
+
+        return;
+    }
+
+
+    const formData = new FormData();
+
+    formData.append("id", id);
+    formData.append("nom", nom);
+    formData.append("description", description);
+    formData.append("lieu", lieu);
+    formData.append("delai", delai);
+    formData.append("frais", frais);
+
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL +
+            "/modifier_demarche_agent.php",
+            {
+                method: "POST",
+                credentials: "include",
+                body: formData
+            }
+        );
+
+        const data = await response.json();
+
+        console.log(
+            "Modification démarche :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Impossible de modifier la démarche."
+            );
+
+            return;
+        }
+
+
+        showToast(
+            data.message ||
+            "Démarche modifiée avec succès."
+        );
+
+
+        await voirDemarcheAgent(id);
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur modification démarche :",
+            error
+        );
+
+        showToast(
+            "Erreur lors de la modification."
+        );
+    }
+}
+
+
 
 async function chargerRendezVousAgent() {
 
@@ -3241,6 +3952,128 @@ async function chargerRendezVousAgent() {
     }
 }
 
+async function chargerDemarchesAgent() {
+
+    const liste =
+        document.getElementById("agentProceduresList");
+
+    if (!liste) {
+        return;
+    }
+
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/agent_demarches.php",
+            {
+                credentials: "include"
+            }
+        );
+
+
+        const data = await response.json();
+
+
+        console.log(
+            "Démarches agent :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            liste.innerHTML = `
+                <p class="muted">
+                    ${escapeHTML(
+                        data.message ||
+                        "Impossible de récupérer les démarches."
+                    )}
+                </p>
+            `;
+
+            return;
+        }
+
+
+        if (
+            !data.demarches ||
+            data.demarches.length === 0
+        ) {
+
+            liste.innerHTML = `
+                <div class="empty-state">
+
+                    <i class="fa-regular fa-folder-open"></i>
+
+                    <p>
+                        Aucune démarche pour votre service.
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+
+        liste.innerHTML =
+            data.demarches.map(
+                demarche => `
+
+                    <div class="request-card">
+
+                        <div>
+
+                            <h3>
+                                ${escapeHTML(
+                                    demarche.nom
+                                )}
+                            </h3>
+
+                            <p class="muted">
+                                ${escapeHTML(
+                                    demarche.description ||
+                                    "Aucune description disponible."
+                                )}
+                            </p>
+
+                        </div>
+
+
+                        <div>
+
+                            <button
+                                class="btn"
+                                onclick="voirDemarcheAgent(${demarche.id})"
+                            >
+                                <i class="fa-solid fa-eye"></i>
+                                Voir les détails
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                `
+            ).join("");
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur chargement démarches agent :",
+            error
+        );
+
+
+        liste.innerHTML = `
+            <p class="muted">
+                Erreur lors du chargement des démarches.
+            </p>
+        `;
+    }
+}
 
 async function voirDemandeAgent(id) {
 
@@ -3288,6 +4121,18 @@ async function voirDemandeAgent(id) {
             : [];
 
 
+        /*
+         * Afficher la zone de modification
+         * uniquement pour un Agent ou un Admin
+         */
+        const peutModifier =
+            utilisateurConnecte &&
+            (
+                utilisateurConnecte.role === "agent" ||
+                utilisateurConnecte.role === "admin"
+            );
+
+
         page.innerHTML = `
 
             <div class="container">
@@ -3309,35 +4154,101 @@ async function voirDemandeAgent(id) {
 
                     <h2>
                         ${escapeHTML(
-            demande.demarche
-        )}
+                            demande.demarche
+                        )}
                     </h2>
 
 
                     <p>
                         <strong>Statut :</strong>
                         ${escapeHTML(
-            demande.statut
-        )}
+                            demande.statut
+                        )}
                     </p>
 
 
                     <p>
                         <strong>Date de demande :</strong>
                         ${escapeHTML(
-            demande.date_demande
-        )}
+                            demande.date_demande
+                        )}
                     </p>
 
 
                     <p>
                         <strong>Utilisateur :</strong>
                         ${escapeHTML(
-            demande.utilisateur_id
-        )}
+                            demande.utilisateur_id
+                        )}
                     </p>
 
                 </section>
+
+
+                ${
+                    peutModifier
+                    ? `
+
+                        <section class="card">
+
+                            <h2>
+                                Modifier le statut
+                            </h2>
+
+                            <label for="statutDemandeAgent">
+                                Nouveau statut
+                            </label>
+
+                            <select
+                                id="statutDemandeAgent"
+                                class="form-control"
+                            >
+
+                                <option
+                                    value="En attente"
+                                    ${demande.statut === "En attente" ? "selected" : ""}
+                                >
+                                    En attente
+                                </option>
+
+                                <option
+                                    value="Acceptée"
+                                    ${demande.statut === "Acceptée" ? "selected" : ""}
+                                >
+                                    Acceptée
+                                </option>
+
+                                <option
+                                    value="Refusée"
+                                    ${demande.statut === "Refusée" ? "selected" : ""}
+                                >
+                                    Refusée
+                                </option>
+
+                                <option
+                                    value="Traitée"
+                                    ${demande.statut === "Traitée" ? "selected" : ""}
+                                >
+                                    Traitée
+                                </option>
+
+                            </select>
+
+
+                            <button
+                                class="btn"
+                                style="margin-top: 15px;"
+                                onclick="modifierStatutDemandeAgent(${demande.id})"
+                            >
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                Enregistrer le statut
+                            </button>
+
+                        </section>
+
+                    `
+                    : ""
+                }
 
 
                 <section class="card">
@@ -3353,40 +4264,40 @@ async function voirDemandeAgent(id) {
 
                     <p>
                         ${escapeHTML(
-            demande.description || ""
-        )}
+                            demande.description || ""
+                        )}
                     </p>
 
 
                     <p>
                         <strong>Service :</strong>
                         ${escapeHTML(
-            demande.service || ""
-        )}
+                            demande.service || ""
+                        )}
                     </p>
 
 
                     <p>
                         <strong>Lieu :</strong>
                         ${escapeHTML(
-            demande.lieu || ""
-        )}
+                            demande.lieu || ""
+                        )}
                     </p>
 
 
                     <p>
                         <strong>Délai :</strong>
                         ${escapeHTML(
-            demande.delai || ""
-        )}
+                            demande.delai || ""
+                        )}
                     </p>
 
 
                     <p>
                         <strong>Frais :</strong>
                         ${escapeHTML(
-            demande.frais || ""
-        )}
+                            demande.frais || ""
+                        )}
                     </p>
 
                 </section>
@@ -3399,30 +4310,31 @@ async function voirDemandeAgent(id) {
                     </h2>
 
 
-                    ${etapes.length > 0
+                    ${
+                        etapes.length > 0
 
-                ? `
+                        ? `
                             <ol>
 
                                 ${etapes.map(
-                    etape => `
+                                    etape => `
                                         <li>
                                             ${escapeHTML(
-                        etape
-                    )}
+                                                etape
+                                            )}
                                         </li>
                                     `
-                ).join("")}
+                                ).join("")}
 
                             </ol>
                         `
 
-                : `
+                        : `
                             <p class="muted">
                                 Aucune étape renseignée.
                             </p>
                         `
-            }
+                    }
 
                 </section>
 
@@ -3448,6 +4360,85 @@ async function voirDemandeAgent(id) {
 
         showToast(
             "Erreur lors du chargement de la demande."
+        );
+    }
+}
+
+async function modifierStatutDemandeAgent(id) {
+
+    const select =
+        document.getElementById("statutDemandeAgent");
+
+    if (!select) {
+        return;
+    }
+
+    const statut = select.value;
+
+
+    const formData = new FormData();
+
+    formData.append(
+        "demande_id",
+        id
+    );
+
+    formData.append(
+        "statut",
+        statut
+    );
+
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL + "/modifier_statut_demande.php",
+            {
+                method: "POST",
+                credentials: "include",
+                body: formData
+            }
+        );
+
+
+        const data = await response.json();
+
+
+        console.log(
+            "Modification statut :",
+            data
+        );
+
+
+        if (!data.success) {
+
+            showToast(
+                data.message ||
+                "Impossible de modifier le statut."
+            );
+
+            return;
+        }
+
+
+        showToast(
+            "Statut modifié avec succès."
+        );
+
+
+        // Recharger le détail
+        await voirDemandeAgent(id);
+
+
+    } catch (error) {
+
+        console.error(
+            "Erreur modification statut :",
+            error
+        );
+
+        showToast(
+            "Erreur lors de la modification du statut."
         );
     }
 }
@@ -4030,8 +5021,7 @@ function servicesPage() {
 /* =========================================================
    DETAIL SERVICE
 ========================================================= */
-
-function serviceDetail(serviceId) {
+function serviceDetail(serviceId, origin = "services") {
 
     if (!protect()) {
         return;
@@ -4051,7 +5041,7 @@ function serviceDetail(serviceId) {
 
         showToast("Service introuvable");
 
-        navigate("services");
+        navigate(origin === "home" ? "home" : "services");
 
         return;
     }
@@ -4059,18 +5049,21 @@ function serviceDetail(serviceId) {
     const serviceProcedures =
         procedures[serviceId] || [];
 
+    // Mémoriser l'origine du service
+    procedureOrigin = origin;
 
     page.innerHTML = `
         <div class="container">
 
             <p
                 class="link"
-                onclick="navigate('services')"
+                onclick="navigate('${origin === "home" ? "home" : "services"}')"
             >
                 <i class="fa-solid fa-arrow-left"></i>
-                Retour aux services
+                ${origin === "home"
+            ? "Retour à l'accueil"
+            : "Retour aux services"}
             </p>
-
 
             <div class="card service-detail">
 
@@ -4094,15 +5087,12 @@ function serviceDetail(serviceId) {
 
                 </div>
 
-
                 <hr>
-
 
                 <h2>
                     <i class="fa-solid fa-list"></i>
                     Démarches disponibles
                 </h2>
-
 
                 <div class="list">
 
@@ -4163,7 +5153,6 @@ function serviceDetail(serviceId) {
         </div>
     `;
 }
-
 
 /* =========================================================
    PAGE PROCEDURE
@@ -4303,27 +5292,27 @@ async function procedure(serviceId, procedureId) {
 
         page.innerHTML = `
             <div class="container">
+            <p
+    class="link"
+    onclick="
+        procedureOrigin === 'assistant'
+            ? navigate('assistant')
+            : serviceDetail(
+                '${serviceId}',
+                procedureOrigin === 'home'
+                    ? 'home'
+                    : 'services'
+            )
+    "
+>
+    <i class="fa-solid fa-arrow-left"></i>
 
-                <p
-                    class="link"
-                    onclick="
-                        procedureOrigin === 'assistant'
-                            ? navigate('assistant')
-                            : procedureOrigin === 'home'
-                                ? navigate('home')
-                                : serviceDetail('${serviceId}')
-                    "
-                >
-                    <i class="fa-solid fa-arrow-left"></i>
-
-                    ${procedureOrigin === 'assistant'
-                ? "Retour à l'assistant"
-                : procedureOrigin === 'home'
-                    ? "Retour à l'accueil"
-                    : "Retour à " + service.name
-            }
-
-                </p>
+    ${
+        procedureOrigin === 'assistant'
+            ? "Retour à l'assistant"
+            : "Retour à " + service.name
+    }
+</p>
 
 
                 <div class="layout-two">
@@ -5063,12 +6052,12 @@ async function adminAppointmentsPage() {
             "Rendez-vous administrateur :",
             data
         );
-    data.rendezvous.sort(function (a, b) {
-    const dateA = new Date(a.created_at);
-    const dateB = new Date(b.created_at);
+        data.rendezvous.sort(function (a, b) {
+            const dateA = new Date(a.created_at);
+            const dateB = new Date(b.created_at);
 
-    return dateB - dateA;
-});
+            return dateB - dateA;
+        });
 
 
         if (!data.success) {
@@ -6483,9 +7472,9 @@ function profilePage() {
                     ? "Agent"
                     : "Citoyen"
     )}
-</p>
+</p><br>
 
-<hr>
+
 
 
 
@@ -6533,10 +7522,6 @@ function afficherModificationProfil() {
 
     page.innerHTML = `
         <div class="container profile-edit-page">
-
-            <div class="eyebrow">
-                COMPTE
-            </div>
 
             <div class="profile-edit-header">
 
@@ -7148,9 +8133,9 @@ async function assistantSearch() {
 
                     <p class="muted">
                         ${escapeHTML(
-                            data.message ||
-                            "Impossible d'analyser votre demande."
-                        )}
+                data.message ||
+                "Impossible d'analyser votre demande."
+            )}
                     </p>
 
                 </div>
@@ -7165,19 +8150,19 @@ async function assistantSearch() {
         | Besoin de clarification
         |--------------------------------------------------------------------------
         */
-if (
-    data.clarification === true ||
-    data.trouve !== true
-) {
+        if (
+            data.clarification === true ||
+            data.trouve !== true
+        ) {
 
-    let choixHTML = "";
+            let choixHTML = "";
 
-    if (
-        Array.isArray(data.choix) &&
-        data.choix.length > 0
-    ) {
+            if (
+                Array.isArray(data.choix) &&
+                data.choix.length > 0
+            ) {
 
-        choixHTML = `
+                choixHTML = `
             <div class="assistant-choices">
 
                 <h4>
@@ -7189,7 +8174,7 @@ if (
 
                     ${data.choix.map(function (choix) {
 
-                        return `
+                    return `
                             <button
                                 type="button"
                                 class="btn"
@@ -7199,21 +8184,21 @@ if (
                                 <i class="fa-solid fa-arrow-right"></i>
 
                                 ${escapeHTML(
-                                    choix.nom
-                                )}
+                        choix.nom
+                    )}
 
                             </button>
                         `;
 
-                    }).join("")}
+                }).join("")}
 
                 </div>
 
             </div>
         `;
-    }
+            }
 
-    result.innerHTML = `
+            result.innerHTML = `
         <div class="card">
 
             <h3>
@@ -7223,9 +8208,9 @@ if (
 
             <p class="muted">
                 ${escapeHTML(
-                    data.message ||
-                    "Pouvez-vous préciser votre demande ?"
-                )}
+                data.message ||
+                "Pouvez-vous préciser votre demande ?"
+            )}
             </p>
 
             ${choixHTML}
@@ -7233,7 +8218,7 @@ if (
         </div>
     `;
 
-    return;
+            return;
 
         }
 
@@ -7302,24 +8287,23 @@ if (
                             <li>
 
                                 ${escapeHTML(
-                                    document.nom_document
-                                )}
+                            document.nom_document
+                        )}
 
-                                ${
-                                    obligatoire
+                                ${obligatoire
 
-                                    ?
+                                ?
 
-                                    `<small class="muted">
+                                `<small class="muted">
                                         - Obligatoire
                                     </small>`
 
-                                    :
+                                :
 
-                                    `<small class="muted">
+                                `<small class="muted">
                                         - Selon votre situation
                                     </small>`
-                                }
+                            }
 
                             </li>
                         `;
@@ -7341,98 +8325,94 @@ if (
 
                 <h3>
                     ${escapeHTML(
-                        demarche.nom
-                    )}
+            demarche.nom
+        )}
                 </h3>
 
 
                 <p class="muted">
 
                     ${escapeHTML(
-                        demarche.description || ""
-                    )}
+            demarche.description || ""
+        )}
 
                 </p>
 
 
-                ${
-                    demarche.service
+                ${demarche.service
 
-                    ?
+                ?
 
-                    `
+                `
                     <p>
                         <strong>Service :</strong>
                         ${escapeHTML(
-                            demarche.service
-                        )}
+                    demarche.service
+                )}
                     </p>
                     `
 
-                    :
+                :
 
-                    ""
-                }
+                ""
+            }
 
 
-                ${
-                    demarche.lieu
+                ${demarche.lieu
 
-                    ?
+                ?
 
-                    `
+                `
                     <p>
                         <strong>Lieu :</strong>
                         ${escapeHTML(
-                            demarche.lieu
-                        )}
+                    demarche.lieu
+                )}
                     </p>
                     `
 
-                    :
+                :
 
-                    ""
-                }
+                ""
+            }
 
 
-                ${
-                    demarche.delai
+                ${demarche.delai
 
-                    ?
+                ?
 
-                    `
+                `
                     <p>
                         <strong>Délai :</strong>
                         ${escapeHTML(
-                            demarche.delai
-                        )}
+                    demarche.delai
+                )}
                     </p>
                     `
 
-                    :
+                :
 
-                    ""
-                }
+                ""
+            }
 
 
-                ${
-                    demarche.frais
+                ${demarche.frais
 
-                    ?
+                ?
 
-                    `
+                `
                     <p>
                         <strong>Frais :</strong>
                         ${escapeHTML(
-                            demarche.frais
-                        )}
+                    demarche.frais
+                )}
                     </p>
                     `
 
-                    :
+                :
 
-                    ""
-                }
+                ""
+            }
 
 
                 <h4>
@@ -7454,8 +8434,8 @@ if (
                     type="button"
                     class="btn"
                     onclick="assistantChoice(${Number(
-                        demarche.id
-                    )})"
+                demarche.id
+            )})"
                 >
 
                     <i class="fa-solid fa-arrow-right"></i>
@@ -7467,66 +8447,66 @@ if (
             </div>
         `;
 
-} catch (error) {
+    } catch (error) {
 
-    console.error(
-        "Erreur Assistant IA :",
-        error
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Fallback vers le moteur classique
-    |--------------------------------------------------------------------------
-    */
-
-    try {
-
-        console.log(
-            "Assistant IA indisponible.",
-            "Tentative avec orientation classique..."
-        );
-
-
-        const fallbackUrl =
-            API_BASE_URL +
-            "/orientation.php?message=" +
-            encodeURIComponent(message);
-
-
-        const fallbackResponse =
-            await fetch(fallbackUrl);
-
-
-        if (!fallbackResponse.ok) {
-
-            throw new Error(
-                "Erreur HTTP fallback : " +
-                fallbackResponse.status
-            );
-        }
-
-
-        const fallbackData =
-            await fallbackResponse.json();
-
-
-        console.log(
-            "Réponse fallback :",
-            fallbackData
+        console.error(
+            "Erreur Assistant IA :",
+            error
         );
 
 
         /*
         |--------------------------------------------------------------------------
-        | Même résultat qu'une recherche classique
+        | Fallback vers le moteur classique
         |--------------------------------------------------------------------------
         */
 
-        if (fallbackData.trouve === true) {
+        try {
 
-            result.innerHTML = `
+            console.log(
+                "Assistant IA indisponible.",
+                "Tentative avec orientation classique..."
+            );
+
+
+            const fallbackUrl =
+                API_BASE_URL +
+                "/orientation.php?message=" +
+                encodeURIComponent(message);
+
+
+            const fallbackResponse =
+                await fetch(fallbackUrl);
+
+
+            if (!fallbackResponse.ok) {
+
+                throw new Error(
+                    "Erreur HTTP fallback : " +
+                    fallbackResponse.status
+                );
+            }
+
+
+            const fallbackData =
+                await fallbackResponse.json();
+
+
+            console.log(
+                "Réponse fallback :",
+                fallbackData
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Même résultat qu'une recherche classique
+            |--------------------------------------------------------------------------
+            */
+
+            if (fallbackData.trouve === true) {
+
+                result.innerHTML = `
 
                 <div class="card">
 
@@ -7544,22 +8524,21 @@ if (
 
                     <h3>
                         ${escapeHTML(
-                            fallbackData.demarche.nom
-                        )}
+                    fallbackData.demarche.nom
+                )}
                     </h3>
 
 
                     <p class="muted">
 
                         ${escapeHTML(
-                            fallbackData.demarche.description || ""
-                        )}
+                    fallbackData.demarche.description || ""
+                )}
 
                     </p>
 
 
-                    ${
-                        fallbackData.demarche.service
+                    ${fallbackData.demarche.service
 
                         ?
 
@@ -7567,8 +8546,8 @@ if (
                         <p>
                             <strong>Service :</strong>
                             ${escapeHTML(
-                                fallbackData.demarche.service
-                            )}
+                            fallbackData.demarche.service
+                        )}
                         </p>
                         `
 
@@ -7578,8 +8557,7 @@ if (
                     }
 
 
-                    ${
-                        fallbackData.demarche.lieu
+                    ${fallbackData.demarche.lieu
 
                         ?
 
@@ -7587,8 +8565,8 @@ if (
                         <p>
                             <strong>Lieu :</strong>
                             ${escapeHTML(
-                                fallbackData.demarche.lieu
-                            )}
+                            fallbackData.demarche.lieu
+                        )}
                         </p>
                         `
 
@@ -7598,8 +8576,7 @@ if (
                     }
 
 
-                    ${
-                        fallbackData.demarche.delai
+                    ${fallbackData.demarche.delai
 
                         ?
 
@@ -7607,8 +8584,8 @@ if (
                         <p>
                             <strong>Délai :</strong>
                             ${escapeHTML(
-                                fallbackData.demarche.delai
-                            )}
+                            fallbackData.demarche.delai
+                        )}
                         </p>
                         `
 
@@ -7618,8 +8595,7 @@ if (
                     }
 
 
-                    ${
-                        fallbackData.demarche.frais
+                    ${fallbackData.demarche.frais
 
                         ?
 
@@ -7627,8 +8603,8 @@ if (
                         <p>
                             <strong>Frais :</strong>
                             ${escapeHTML(
-                                fallbackData.demarche.frais
-                            )}
+                            fallbackData.demarche.frais
+                        )}
                         </p>
                         `
 
@@ -7645,60 +8621,58 @@ if (
 
                     <ul>
 
-                        ${
-                            Array.isArray(
-                                fallbackData.documents
-                            ) &&
-                            fallbackData.documents.length > 0
+                        ${Array.isArray(
+                        fallbackData.documents
+                    ) &&
+                        fallbackData.documents.length > 0
 
-                            ?
+                        ?
 
-                            fallbackData.documents
-                                .map(function (document) {
+                        fallbackData.documents
+                            .map(function (document) {
 
-                                    const obligatoire =
-                                        Number(
-                                            document.obligatoire
-                                        ) === 1;
+                                const obligatoire =
+                                    Number(
+                                        document.obligatoire
+                                    ) === 1;
 
 
-                                    return `
+                                return `
                                         <li>
 
                                             ${escapeHTML(
-                                                document.nom_document
-                                            )}
+                                    document.nom_document
+                                )}
 
-                                            ${
-                                                obligatoire
+                                            ${obligatoire
 
-                                                ?
+                                        ?
 
-                                                `<small class="muted">
+                                        `<small class="muted">
                                                     - Obligatoire
                                                 </small>`
 
-                                                :
+                                        :
 
-                                                `<small class="muted">
+                                        `<small class="muted">
                                                     - Selon votre situation
                                                 </small>`
-                                            }
+                                    }
 
                                         </li>
                                     `;
 
-                                })
-                                .join("")
+                            })
+                            .join("")
 
-                            :
+                        :
 
-                            `
+                        `
                                 <li>
                                     Aucun document enregistré.
                                 </li>
                             `
-                        }
+                    }
 
                     </ul>
 
@@ -7710,8 +8684,8 @@ if (
                         type="button"
                         class="btn"
                         onclick="assistantChoice(${Number(
-                            fallbackData.demarche.id
-                        )})"
+                        fallbackData.demarche.id
+                    )})"
                     >
 
                         <i class="fa-solid fa-arrow-right"></i>
@@ -7724,25 +8698,25 @@ if (
 
             `;
 
-            return;
-        }
+                return;
+            }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Fallback ambigu
-        |--------------------------------------------------------------------------
-        */
+            /*
+            |--------------------------------------------------------------------------
+            | Fallback ambigu
+            |--------------------------------------------------------------------------
+            */
 
-        if (
-            fallbackData.ambigu === true ||
-            (
-                Array.isArray(fallbackData.choix) &&
-                fallbackData.choix.length > 0
-            )
-        ) {
+            if (
+                fallbackData.ambigu === true ||
+                (
+                    Array.isArray(fallbackData.choix) &&
+                    fallbackData.choix.length > 0
+                )
+            ) {
 
-            result.innerHTML = `
+                result.innerHTML = `
 
                 <div class="card">
 
@@ -7757,24 +8731,24 @@ if (
                     </p>
 
                     ${renderAmbiguousResult(
-                        fallbackData
-                    )}
+                    fallbackData
+                )}
 
                 </div>
 
             `;
 
-            return;
-        }
+                return;
+            }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Aucun résultat
-        |--------------------------------------------------------------------------
-        */
+            /*
+            |--------------------------------------------------------------------------
+            | Aucun résultat
+            |--------------------------------------------------------------------------
+            */
 
-        result.innerHTML = `
+            result.innerHTML = `
 
             <div class="card">
 
@@ -7790,30 +8764,30 @@ if (
                 <p class="muted">
 
                     ${escapeHTML(
-                        fallbackData.message ||
-                        "Nous n'avons pas pu déterminer votre démarche."
-                    )}
+                fallbackData.message ||
+                "Nous n'avons pas pu déterminer votre démarche."
+            )}
 
                 </p>
 
                 ${renderSuggestions(
-                    fallbackData
-                )}
+                fallbackData
+            )}
 
             </div>
 
         `;
 
 
-    } catch (fallbackError) {
+        } catch (fallbackError) {
 
-        console.error(
-            "Erreur du système classique :",
-            fallbackError
-        );
+            console.error(
+                "Erreur du système classique :",
+                fallbackError
+            );
 
 
-        result.innerHTML = `
+            result.innerHTML = `
 
             <div class="card">
 
@@ -7836,11 +8810,11 @@ if (
             </div>
 
         `;
+        }
     }
-}
 
 }
-        
+
 /* =========================================================
    CHOIX DE L'ASSISTANT
 ========================================================= */
@@ -8296,7 +9270,6 @@ document.addEventListener(
 /* =========================================================
    MENU MOBILE
 ========================================================= */
-
 document.addEventListener(
     "DOMContentLoaded",
     function () {
@@ -8304,11 +9277,9 @@ document.addEventListener(
         const menuBtn =
             document.getElementById("menuBtn");
 
-
         if (!menuBtn) {
             return;
         }
-
 
         menuBtn.addEventListener(
             "click",
@@ -8319,7 +9290,6 @@ document.addEventListener(
                         ".navbar nav"
                     );
 
-
                 if (nav) {
                     nav.classList.toggle("open");
                 }
@@ -8327,9 +9297,24 @@ document.addEventListener(
             }
         );
 
+        const nav =
+            document.querySelector(".navbar nav");
+
+        if (nav) {
+            nav.addEventListener(
+                "click",
+                function (event) {
+
+                    if (event.target.closest("a")) {
+                        nav.classList.remove("open");
+                    }
+
+                }
+            );
+        }
+
     }
 );
-
 
 /* =========================================================
    ENTREE CLAVIER

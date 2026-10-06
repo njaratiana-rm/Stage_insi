@@ -1002,16 +1002,135 @@ if (
     exit;
 }
 
+/*
+|--------------------------------------------------------------------------
+| 15 BIS. CONTEXTE : CERTIFICAT DE NAISSANCE
+|--------------------------------------------------------------------------
+*/
+
+if (
+    strpos($message, "naissance") !== false &&
+    strpos($message, "certificat") !== false
+) {
+
+    $demarcheId = 1;
+
+    try {
+
+        $stmtNaissance = $pdo->prepare("
+            SELECT
+                id,
+                nom,
+                description,
+                service,
+                lieu,
+                delai,
+                frais,
+                etapes
+            FROM demarches
+            WHERE id = :id
+        ");
+
+        $stmtNaissance->execute([
+            "id" => $demarcheId
+        ]);
+
+        $demarcheNaissance =
+            $stmtNaissance->fetch(PDO::FETCH_ASSOC);
+
+        if (!$demarcheNaissance) {
+            throw new Exception("Démarche introuvable.");
+        }
+
+        $stmtDocumentsNaissance = $pdo->prepare("
+            SELECT
+                nom_document,
+                description,
+                obligatoire
+            FROM documents_requis
+            WHERE demarche_id = :demarche_id
+        ");
+
+        $stmtDocumentsNaissance->execute([
+            "demarche_id" => $demarcheId
+        ]);
+
+        $documentsNaissance =
+            $stmtDocumentsNaissance->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode(
+            [
+                "trouve" => true,
+
+                "score" => 100,
+
+                "analyse" => [
+                    [
+                        "demarche" =>
+                            $demarcheNaissance["nom"],
+
+                        "score" => 100,
+
+                        "mot_cle" =>
+                            "certificat de naissance"
+                    ]
+                ],
+
+                "demarche" => [
+                    "id" =>
+                        (int)$demarcheNaissance["id"],
+
+                    "nom" =>
+                        $demarcheNaissance["nom"],
+
+                    "description" =>
+                        $demarcheNaissance["description"],
+
+                    "service" =>
+                        $demarcheNaissance["service"],
+
+                    "lieu" =>
+                        $demarcheNaissance["lieu"],
+
+                    "delai" =>
+                        $demarcheNaissance["delai"],
+
+                    "frais" =>
+                        $demarcheNaissance["frais"],
+
+                    "etapes" =>
+                        $demarcheNaissance["etapes"]
+                ],
+
+                "mot_cle_trouve" =>
+                    "certificat de naissance",
+
+                "documents" =>
+                    $documentsNaissance
+            ],
+            JSON_UNESCAPED_UNICODE
+        );
+
+        exit;
+
+    } catch (Exception $e) {
+
+        // On laisse la recherche normale continuer
+    }
+}
+
 
 /*
 |--------------------------------------------------------------------------
 | 16. AMBIGUÏTÉ CERTIFICAT
 |--------------------------------------------------------------------------
 */
-
 if (
     strpos($message, "certificat") !== false &&
-    strpos($message, "propriete") === false
+
+    strpos($message, "propriete") === false &&
+
+    strpos($message, "naissance") === false
 ) {
 
     echo json_encode(

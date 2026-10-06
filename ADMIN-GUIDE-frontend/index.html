@@ -54,84 +54,63 @@
 
 
             <nav>
+                 <a href="#" data-page="home" id="homeNavLink">
+    <i class="fa-solid fa-house"></i>
+    <span>
+        Accueil
+    </span>
+</a>
 
-
-                <a href="#" data-page="home">
-
-                    <i class="fa-solid fa-house"></i>
-
-                    <span>
-                        Accueil
-                    </span>
-
-                </a>
-
-
-                <a href="#" data-page="services">
-
-                    <i class="fa-solid fa-table-cells-large"></i>
-
-                    <span>
-                        Services
-                    </span>
-
-                </a>
+<a href="#" data-page="services" id="servicesNavLink">
+    <i class="fa-solid fa-table-cells-large"></i>
+    <span>
+        Services
+    </span>
+</a>   
                 <a href="#" id="citizenRequestsLink" data-page="requests">
-    <i class="fa-regular fa-file-lines"></i>
-    <span>
-        Mes demandes
-    </span>
-</a>
+                    <i class="fa-regular fa-file-lines"></i>
+                    <span>
+                        Mes demandes
+                    </span>
+                </a>
 
-<a href="#" id="citizenAppointmentsLink" data-page="appointments">
-    <i class="fa-regular fa-calendar"></i>
-    <span>
-        Rendez-vous
-    </span>
-</a>
+                <a href="#" id="citizenAppointmentsLink" data-page="appointments">
+                    <i class="fa-regular fa-calendar"></i>
+                    <span>
+                        Rendez-vous
+                    </span>
+                </a>
+                
 
-       
+
 
                 <a href="#admin-requests" data-page="admin-requests" id="adminRequestsLink" style="display: none;">
                     <i class="fa-solid fa-user-shield"></i>
                     Gestion des demandes
                 </a>
 
-                <a href="#admin-appointments"
-   data-page="admin-appointments"
-   id="adminAppointmentsLink"
-   style="display: none;">
-    <i class="fa-solid fa-calendar-check"></i>
-    Gestion des rendez-vous
-</a>
+                <a href="#admin-appointments" data-page="admin-appointments" id="adminAppointmentsLink"
+                    style="display: none;">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    Gestion des rendez-vous
+                </a>
 
-<a href="#admin-dashboard"
-   data-page="admin-dashboard"
-   id="adminDashboardLink"
-   style="display: none;">
-    <i class="fa-solid fa-chart-line"></i>
-    Tableau de bord
-</a>
+                <a href="#admin-dashboard" data-page="admin-dashboard" id="adminDashboardLink" style="display: none;">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Tableau de bord
+                </a>
 
-<a href="#admin-users"
-   data-page="admin-users"
-   id="adminUsersLink"
-   style="display: none;">
+                <a href="#admin-users" data-page="admin-users" id="adminUsersLink" style="display: none;">
 
-    <i class="fa-solid fa-users"></i>
-    Gestion des utilisateurs
+                    <i class="fa-solid fa-users"></i>
+                    Gestion des utilisateurs
 
-</a>
+                </a>
 
-<a
-    href="#"
-    id="agentSpaceLink"
-    data-page="agent-space"
-     style="display: none;"
->
-    <i class="fa-solid fa-user-tie"></i>
-    Espace agent
-</a>
+                <a href="#" id="agentSpaceLink" data-page="agent-space" style="display: none;">
+                    <i class="fa-solid fa-user-tie"></i>
+                    Espace agent
+                </a>
 
             </nav>
 
@@ -148,38 +127,35 @@
                     <b id="notifBadge"></b>
 
                 </button>
-<button class="profile-btn" id="profileBtn" type="button">
+                <button class="profile-btn" id="profileBtn" type="button">
 
-    <span class="avatar">
-        <i class="fa-solid fa-user"></i>
-    </span>
+                    <span class="avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
 
-    <span class="profile-name" id="profileName">
-        Utilisateur
-    </span>
+                    <span class="profile-name" id="profileName">
+                        Utilisateur
+                    </span>
 
-</button>
-<div class="profile-menu" id="profileMenu">
+                </button>
+                <div class="profile-menu" id="profileMenu">
 
-    <button
-    type="button"
-    data-page="profile"
-    onclick="document.getElementById('profileMenu').classList.remove('show')"
->
-    <i class="fa-solid fa-user"></i>
-    Mon profil
-</button>
+                    <button type="button" data-page="profile"
+                        onclick="document.getElementById('profileMenu').classList.remove('show')">
+                        <i class="fa-solid fa-user"></i>
+                        Mon profil
+                    </button>
 
-    <hr>
+                    <hr>
 
-    <button type="button" id="logoutBtn">
-        <i class="fa-solid fa-right-from-bracket"></i>
-        Déconnexion
-    </button>
+                    <button type="button" id="logoutBtn">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        Déconnexion
+                    </button>
 
-</div>
+                </div>
 
- 
+
 
                 </button>
 
